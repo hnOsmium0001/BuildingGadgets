@@ -1,6 +1,7 @@
 package com.direwolf20.buildinggadgets.common.items;
 
 import com.direwolf20.buildinggadgets.client.events.EventTooltip;
+import com.direwolf20.buildinggadgets.client.gui.GuiProxy;
 import com.direwolf20.buildinggadgets.common.BuildingGadgets;
 import com.direwolf20.buildinggadgets.common.tools.GadgetUtils;
 import com.direwolf20.buildinggadgets.common.tools.WorldSave;
@@ -13,7 +14,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.client.model.ModelLoader;
@@ -59,6 +62,18 @@ public class Template extends Item implements ITemplate {
 
     public static String getName(ItemStack stack) {
         return GadgetUtils.getStringFromNBT(stack, "TemplateName");
+    }
+
+    @Override
+    public EnumActionResult onItemUse(EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+        if (hand == EnumHand.OFF_HAND) {
+            return EnumActionResult.PASS;
+        }
+
+        if (!world.isRemote) {
+            player.openGui(BuildingGadgets.instance, GuiProxy.MaterialListID, world, pos.getX(), pos.getY(), pos.getZ());
+        }
+        return EnumActionResult.SUCCESS;
     }
 
     @Override

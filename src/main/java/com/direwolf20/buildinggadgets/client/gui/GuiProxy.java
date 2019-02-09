@@ -16,6 +16,7 @@ public class GuiProxy implements IGuiHandler {
     public static final int CopyPasteID = 0;
     public static final int DestructionID = 1;
     public static final int PasteID = 2;
+    public static final int MaterialListID = 3;
 
     @Override
     public Object getServerGuiElement(int ID, EntityPlayer player, World world, int x, int y, int z) {
