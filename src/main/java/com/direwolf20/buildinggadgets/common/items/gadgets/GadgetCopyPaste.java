@@ -55,8 +55,8 @@ public class GadgetCopyPaste extends GadgetGeneric implements ITemplate {
     }
 
     public GadgetCopyPaste() {
-        setRegistryName("copypastetool");        // The unique name (within your mod) that identifies this item
-        setUnlocalizedName(BuildingGadgets.MODID + ".copypastetool");     // Used for localization (en_US.lang)
+        setRegistryName("copypastetool");
+        setUnlocalizedName(BuildingGadgets.MODID + ".copypastetool");
         setMaxStackSize(1);
         setMaxDamage(SyncedConfig.durabilityCopyPaste);
     }
@@ -67,13 +67,13 @@ public class GadgetCopyPaste extends GadgetGeneric implements ITemplate {
     }
 
     @Override
-    public int getEnergyCost() {
+    public int getEnergyCost(ItemStack tool) {
         return SyncedConfig.energyCostCopyPaste;
     }
 
     @Override
-    public int getDamagePerUse() {
-        return 1;
+    public int getDamageCost(ItemStack tool) {
+        return SyncedConfig.damageCostCopyPaste;
     }
 
     private static void setAnchor(ItemStack stack, BlockPos anchorPos) {
@@ -239,7 +239,7 @@ public class GadgetCopyPaste extends GadgetGeneric implements ITemplate {
         //Called when we specify a mode with the radial menu
         ToolMode mode = ToolMode.values()[modeInt];
         setToolMode(heldItem, mode);
-        player.sendStatusMessage(new TextComponentString(TextFormatting.AQUA + new TextComponentTranslation("message.gadget.toolmode").getUnformattedComponentText() + ": " + mode.name()), true);
+        player.sendStatusMessage(new TextComponentString(TextFormatting.AQUA + new TextComponentTranslation("message.gadget.toolmode").getUnformattedComponentText() + ": " + mode), true);
     }
 
     @Override
@@ -291,7 +291,7 @@ public class GadgetCopyPaste extends GadgetGeneric implements ITemplate {
             } else if (player.isSneaking()) {
                 player.openGui(BuildingGadgets.instance, GuiProxy.PasteID, world, hand.ordinal(), 0, 0);
             } else {
-                ToolRenders.updateCache();
+                ToolRenders.updateInventoryCache();
             }
         }
         return new ActionResult<ItemStack>(EnumActionResult.SUCCESS, stack);
