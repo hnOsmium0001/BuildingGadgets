@@ -3,22 +3,29 @@ package com.direwolf20.buildinggadgets.common.proxy;
 
 import com.direwolf20.buildinggadgets.client.gui.GuiProxy;
 import com.direwolf20.buildinggadgets.common.BuildingGadgets;
+import com.direwolf20.buildinggadgets.common.ModSounds;
 import com.direwolf20.buildinggadgets.common.blocks.*;
 import com.direwolf20.buildinggadgets.common.blocks.templatemanager.TemplateManager;
 import com.direwolf20.buildinggadgets.common.blocks.templatemanager.TemplateManagerTileEntity;
 import com.direwolf20.buildinggadgets.common.config.CompatConfig;
 import com.direwolf20.buildinggadgets.common.config.SyncedConfig;
 import com.direwolf20.buildinggadgets.common.entities.ModEntities;
-import com.direwolf20.buildinggadgets.common.items.*;
+import com.direwolf20.buildinggadgets.common.integration.IntegrationHandler;
+import com.direwolf20.buildinggadgets.common.items.Template;
 import com.direwolf20.buildinggadgets.common.items.gadgets.GadgetBuilding;
 import com.direwolf20.buildinggadgets.common.items.gadgets.GadgetCopyPaste;
 import com.direwolf20.buildinggadgets.common.items.gadgets.GadgetDestruction;
 import com.direwolf20.buildinggadgets.common.items.gadgets.GadgetExchanger;
+import com.direwolf20.buildinggadgets.common.items.pastes.ConstructionPaste;
+import com.direwolf20.buildinggadgets.common.items.pastes.ConstructionPasteContainer;
+import com.direwolf20.buildinggadgets.common.items.pastes.ConstructionPasteContainerCreative;
+import com.direwolf20.buildinggadgets.common.items.pastes.RegularPasteContainerTypes;
 import com.direwolf20.buildinggadgets.common.network.PacketHandler;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundEvent;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -32,14 +39,16 @@ import java.io.File;
 @Mod.EventBusSubscriber
 public class CommonProxy {
     private boolean applyCompatConfig = false;
+
     public void preInit(FMLPreInitializationEvent e) {
         ModEntities.init();
         PacketHandler.registerMessages();
-        File cfgFile = new File(e.getModConfigurationDirectory(),"BuildingGadgets.cfg");
+        File cfgFile = new File(e.getModConfigurationDirectory(), "BuildingGadgets.cfg");
         if (cfgFile.exists()) {
             BuildingGadgets.logger.info("Preparing to migrate old config Data to new Format");
             applyCompatConfig = CompatConfig.readConfig(cfgFile);
         }
+        IntegrationHandler.preInit(e);
     }
 
     public void init() {
@@ -60,7 +69,7 @@ public class CommonProxy {
         if (SyncedConfig.enablePaste) {
             event.getRegistry().register(new ConstructionBlock());
             event.getRegistry().register(new ConstructionBlockPowder());
-            GameRegistry.registerTileEntity(ConstructionBlockTileEntity.class, new ResourceLocation(BuildingGadgets.MODID,  "_constructionBlock"));
+            GameRegistry.registerTileEntity(ConstructionBlockTileEntity.class, new ResourceLocation(BuildingGadgets.MODID, "_constructionBlock"));
         }
     }
 
@@ -78,9 +87,17 @@ public class CommonProxy {
             event.getRegistry().register(new ItemBlock(ModBlocks.constructionBlock).setRegistryName(ModBlocks.constructionBlock.getRegistryName()));
             event.getRegistry().register(new ItemBlock(ModBlocks.constructionBlockPowder).setRegistryName(ModBlocks.constructionBlockPowder.getRegistryName()));
             event.getRegistry().register(new ConstructionPaste());
-            event.getRegistry().register(new ConstructionPasteContainer());
-            event.getRegistry().register(new ConstructionPasteContainerT2());
-            event.getRegistry().register(new ConstructionPasteContainerT3());
+            for (RegularPasteContainerTypes type : RegularPasteContainerTypes.values()) {
+                event.getRegistry().register(new ConstructionPasteContainer(type.itemSuffix, type.capacitySupplier));
+            }
+            event.getRegistry().register(new ConstructionPasteContainerCreative());
+        }
+    }
+
+    @SubscribeEvent
+    public static void registerSounds(RegistryEvent.Register<SoundEvent> event) {
+        for (ModSounds sound : ModSounds.values()) {
+            event.getRegistry().register(sound.getSound());
         }
     }
 }

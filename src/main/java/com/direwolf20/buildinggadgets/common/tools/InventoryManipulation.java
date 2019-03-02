@@ -1,10 +1,10 @@
 package com.direwolf20.buildinggadgets.common.tools;
 
-import com.direwolf20.buildinggadgets.common.items.ConstructionPaste;
-import com.direwolf20.buildinggadgets.common.items.GenericPasteContainer;
 import com.direwolf20.buildinggadgets.common.items.ModItems;
 import com.direwolf20.buildinggadgets.common.items.gadgets.GadgetCopyPaste;
 import com.direwolf20.buildinggadgets.common.items.gadgets.GadgetGeneric;
+import com.direwolf20.buildinggadgets.common.items.pastes.ConstructionPaste;
+import com.direwolf20.buildinggadgets.common.items.pastes.GenericPasteContainer;
 import com.google.common.collect.ImmutableSet;
 import net.minecraft.block.*;
 import net.minecraft.block.properties.IProperty;
@@ -33,7 +33,7 @@ public class InventoryManipulation {
     private static final Set<IProperty> SAFE_PROPERTIES_COPY_PASTE = ImmutableSet.<IProperty>builder().addAll(SAFE_PROPERTIES)
             .addAll(ImmutableSet.of(BlockDoubleWoodSlab.VARIANT, BlockRail.SHAPE, BlockRailPowered.SHAPE)).build();
 
-    public static boolean giveItem(ItemStack itemStack, EntityPlayer player) {
+    public static boolean giveItem(ItemStack itemStack, EntityPlayer player, World world) {
         if (player.capabilities.isCreativeMode) {
             return true;
         }
@@ -43,7 +43,37 @@ public class InventoryManipulation {
         if (itemStack.getCount() == 0) {
             return true;
         }
+
+        //Fill any unfilled stacks in the player's inventory first
         InventoryPlayer inv = player.inventory;
+        List<Integer> slots = findItem(itemStack.getItem(), itemStack.getMetadata(), inv);
+        for (int slot : slots) {
+            ItemStack stackInSlot = inv.getStackInSlot(slot);
+            if (stackInSlot.getCount() < stackInSlot.getItem().getItemStackLimit(stackInSlot)) {
+                ItemStack giveItemStack = itemStack.copy();
+                boolean success = inv.addItemStackToInventory(giveItemStack);
+                if (success) return true;
+            }
+        }
+
+        //Try to insert into the remote inventory.
+        ItemStack tool = GadgetGeneric.getGadget(player);
+        IItemHandler remoteInventory = GadgetUtils.getRemoteInventory(tool, world, player, NetworkIO.Operation.INSERT);
+        if (remoteInventory != null) {
+            for (int i = 0; i < remoteInventory.getSlots(); i++) {
+                ItemStack containerItem = remoteInventory.getStackInSlot(i);
+                ItemStack giveItemStack = itemStack.copy();
+                if ((containerItem.getItem() == itemStack.getItem() && containerItem.getMetadata() == itemStack.getMetadata()) || containerItem.isEmpty()) {
+                    giveItemStack = remoteInventory.insertItem(i, giveItemStack, false);
+                    if (giveItemStack.isEmpty())
+                        return true;
+
+                    itemStack = giveItemStack.copy();
+                }
+            }
+        }
+
+
         List<IItemHandler> invContainers = findInvContainers(inv);
         if (invContainers.size() > 0) {
             for (IItemHandler container : invContainers) {
@@ -52,9 +82,10 @@ public class InventoryManipulation {
                     ItemStack giveItemStack = itemStack.copy();
                     if (containerItem.getItem() == giveItemStack.getItem() && containerItem.getMetadata() == giveItemStack.getMetadata()) {
                         giveItemStack = container.insertItem(i, giveItemStack, false);
-                        if (giveItemStack.isEmpty()) {
+                        if (giveItemStack.isEmpty())
                             return true;
-                        }
+
+                        itemStack = giveItemStack.copy();
                     }
                 }
             }
@@ -70,7 +101,7 @@ public class InventoryManipulation {
         }
 
         ItemStack tool = GadgetGeneric.getGadget(player);
-        IItemHandler remoteInventory = GadgetUtils.getRemoteInventory(tool, world);
+        IItemHandler remoteInventory = GadgetUtils.getRemoteInventory(tool, world, player);
         if (remoteInventory != null) {
             for (int i = 0; i < remoteInventory.getSlots(); i++) {
                 ItemStack containerItem = remoteInventory.getStackInSlot(i);
@@ -116,7 +147,7 @@ public class InventoryManipulation {
 
     public static int countItem(ItemStack itemStack, EntityPlayer player, World world) {
         return countItem(itemStack, player, (tool, stack) -> {
-            IItemHandler remoteInventory = GadgetUtils.getRemoteInventory(tool, world);
+            IItemHandler remoteInventory = GadgetUtils.getRemoteInventory(tool, world, player);
             return remoteInventory == null ? 0 : countInContainer(remoteInventory, stack.getItem(), stack.getMetadata());
         });
     }
@@ -202,7 +233,7 @@ public class InventoryManipulation {
 
         for (Map.Entry<Integer, Integer> entry : list) {
             ItemStack containerStack = inv.getStackInSlot(entry.getKey());
-            int maxAmount = ((GenericPasteContainer) containerStack.getItem()).getMaxAmount();
+            int maxAmount = ((GenericPasteContainer) containerStack.getItem()).getMaxCapacity();
             int pasteInContainer = GenericPasteContainer.getPasteAmount(containerStack);
             int freeSpace = maxAmount - pasteInContainer;
             int stackSize = itemStack.getCount();
@@ -333,6 +364,5 @@ public class InventoryManipulation {
         Block block = originalState.getBlock();
         placeState = originalState.getBlock().getDefaultState();
         return placeState;
-
     }*/
 }

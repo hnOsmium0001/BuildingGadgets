@@ -89,7 +89,7 @@ public class TemplateManagerGUI extends GuiContainer {
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
         super.drawScreen(mouseX, mouseY, partialTicks);
-        if (buttonHelp.selected) {
+        if (buttonHelp.isSelected()) {
             GlStateManager.color(1, 1, 1, 1);
             GlStateManager.disableLighting();
             for (IHoverHelpText helpTextProvider : helpTextProviders)
@@ -292,7 +292,7 @@ public class TemplateManagerGUI extends GuiContainer {
     @Override
     protected void actionPerformed(GuiButton b) {
         if (b.id == buttonHelp.id) {
-            buttonHelp.selected ^= true;
+            buttonHelp.toggleSelected();
         } else if (b.id == 0) {
             PacketHandler.INSTANCE.sendToServer(new PacketTemplateManagerSave(te.getPos(), nameField.getText()));
         } else if (b.id == 1) {
@@ -303,6 +303,10 @@ public class TemplateManagerGUI extends GuiContainer {
             String CBString = getClipboardString();
             //System.out.println("CBString Length: " + CBString.length());
             //System.out.println(CBString);
+            if (GadgetUtils.mightBeLink(CBString)) {
+                Minecraft.getMinecraft().player.sendStatusMessage(new TextComponentString(TextFormatting.RED + new TextComponentTranslation("message.gadget.pastefailed.linkcopied").getUnformattedComponentText()),false);
+                return;
+            }
             try {
                 //Anything larger than below is likely to overflow the max packet size, crashing your client.
                 ByteArrayOutputStream pasteStream = GadgetUtils.getPasteStream(JsonToNBT.getTagFromJson(CBString), nameField.getText());

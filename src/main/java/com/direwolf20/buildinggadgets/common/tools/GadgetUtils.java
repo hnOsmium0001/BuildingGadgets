@@ -1,14 +1,21 @@
 package com.direwolf20.buildinggadgets.common.tools;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import com.direwolf20.buildinggadgets.common.blocks.ConstructionBlockTileEntity;
 import com.direwolf20.buildinggadgets.common.config.SyncedConfig;
+import com.direwolf20.buildinggadgets.common.integration.NetworkProvider;
 import com.direwolf20.buildinggadgets.common.items.gadgets.GadgetBuilding;
 import com.direwolf20.buildinggadgets.common.items.gadgets.GadgetExchanger;
-import com.direwolf20.buildinggadgets.common.tools.NetworkExtractor.NetworkExtractorRS;
 import com.google.common.collect.HashMultiset;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
-import com.raoulvdberge.refinedstorage.api.network.INetwork;
-import com.raoulvdberge.refinedstorage.api.network.node.INetworkNodeProxy;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
@@ -32,14 +39,12 @@ import net.minecraft.world.World;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 public class GadgetUtils {
+    private static final ImmutableList<String> LINK_STARTS = ImmutableList.of("http","www");
+
+    public static boolean mightBeLink(final String s) {
+        return LINK_STARTS.stream().anyMatch(s::startsWith);
+    }
 
     public static String getStackErrorSuffix(ItemStack stack) {
         return getStackErrorText(stack) + " with NBT tag: " + stack.getTagCompound();
@@ -232,7 +237,6 @@ public class GadgetUtils {
         NBTTagCompound tagCompound = stack.getTagCompound();
         if (tagCompound == null) {
             setToolBlock(stack, Blocks.AIR.getDefaultState());
-            tagCompound = stack.getTagCompound();
             return Blocks.AIR.getDefaultState();
         }
         return NBTUtil.readBlockState(tagCompound.getCompoundTag("blockstate"));
@@ -251,7 +255,7 @@ public class GadgetUtils {
     public static void selectBlock(ItemStack stack, EntityPlayer player) {
         //Used to find which block the player is looking at, and store it in NBT on the tool.
         World world = player.world;
-        RayTraceResult lookingAt = VectorTools.getLookingAt(player);
+        RayTraceResult lookingAt = VectorTools.getLookingAt(player, false);
         if (lookingAt == null)
             return;
 
@@ -281,10 +285,9 @@ public class GadgetUtils {
             setToolActualBlock(stack, ((ConstructionBlockTileEntity) te).getActualBlockState());
             return EnumActionResult.SUCCESS;
         }
-        if (setRemoteInventory(stack, pos, world.provider.getDimension(), world)) {
-            player.sendStatusMessage(new TextComponentString(TextFormatting.AQUA + new TextComponentTranslation("message.gadget.boundTE").getUnformattedComponentText()), true);
+        if (setRemoteInventory(player, stack, pos, world.provider.getDimension(), world))
             return EnumActionResult.SUCCESS;
-        }
+
         return EnumActionResult.FAIL;
     }
 
@@ -293,7 +296,7 @@ public class GadgetUtils {
         World world = player.world;
         List<BlockPos> currentCoords = getAnchor(stack);
         if (currentCoords.size() == 0) {  //If we don't have an anchor, find the block we're supposed to anchor to
-            RayTraceResult lookingAt = VectorTools.getLookingAt(player);
+            RayTraceResult lookingAt = VectorTools.getLookingAt(player, stack);
             if (lookingAt == null) {  //If we aren't looking at anything, exit
                 return false;
             }
@@ -317,35 +320,49 @@ public class GadgetUtils {
         return true;
     }
 
-    public static boolean setRemoteInventory(ItemStack tool, @Nullable BlockPos pos, int dim, World world) {
-        if (getRemoteInventory(pos, dim, world) != null) {
-            writePOSToNBT(tool, pos, "boundTE", dim);
+    public static boolean setRemoteInventory(EntityPlayer player, ItemStack tool, BlockPos pos, int dim, World world) {
+        if (getRemoteInventory(pos, dim, world, player) != null) {
+            boolean same = pos.equals(getPOSFromNBT(tool, "boundTE"));
+            writePOSToNBT(tool, same ? null : pos, "boundTE", dim);
+            player.sendStatusMessage(new TextComponentString(TextFormatting.AQUA + new TextComponentTranslation("message.gadget." + (same ? "unboundTE" : "boundTE")).getUnformattedComponentText()), true);
             return true;
         }
         return false;
     }
 
     @Nullable
-    public static IItemHandler getRemoteInventory(ItemStack tool, World world) {
-        Integer dim = getDIMFromNBT(tool, "boundTE");
-        if (dim == null) return null;
-        BlockPos pos = getPOSFromNBT(tool, "boundTE");
-        return pos == null ? null : getRemoteInventory(pos, dim, world);
+    public static IItemHandler getRemoteInventory(ItemStack tool, World world, EntityPlayer player) {
+        return getRemoteInventory(tool, world, player, NetworkIO.Operation.EXTRACT);
     }
 
     @Nullable
-    public static IItemHandler getRemoteInventory(BlockPos pos, int dim, World world) {
+    public static IItemHandler getRemoteInventory(ItemStack tool, World world, EntityPlayer player, NetworkIO.Operation operation) {
+        Integer dim = getDIMFromNBT(tool, "boundTE");
+        if (dim == null) return null;
+        BlockPos pos = getPOSFromNBT(tool, "boundTE");
+        return pos == null ? null : getRemoteInventory(pos, dim, world, player, operation);
+    }
+
+    @Nullable
+    public static IItemHandler getRemoteInventory(BlockPos pos, int dim, World world, EntityPlayer player) {
+        return getRemoteInventory(pos, dim, world, player, NetworkIO.Operation.EXTRACT);
+    }
+
+    @Nullable
+    public static IItemHandler getRemoteInventory(BlockPos pos, int dim, World world, EntityPlayer player, NetworkIO.Operation operation) {
         MinecraftServer server = world.getMinecraftServer();
         if (server == null) return null;
         World worldServer = server.getWorld(dim);
         if (worldServer == null) return null;
+        return getRemoteInventory(pos, worldServer, player, operation);
+    }
+
+    @Nullable
+    public static IItemHandler getRemoteInventory(BlockPos pos, World world, EntityPlayer player, NetworkIO.Operation operation) {
         TileEntity te = world.getTileEntity(pos);
         if (te == null) return null;
-        if (te instanceof INetworkNodeProxy) {
-            INetwork network = ((INetworkNodeProxy) te).getNode().getNetwork();
-            if (network != null)
-                return new NetworkExtractorRS(network);
-        }
+        IItemHandler network = NetworkProvider.getWrappedNetwork(te, player, operation);
+        if (network != null) return network;
         IItemHandler cap = te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
         return cap != null ? cap : null;
     }

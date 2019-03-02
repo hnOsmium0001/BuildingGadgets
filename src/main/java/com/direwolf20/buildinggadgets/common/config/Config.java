@@ -16,6 +16,8 @@ public class Config {
 
     private static final String LANG_KEY_GADGETS = LANG_KEY_ROOT + ".subCategoryGadgets";
 
+    private static final String LANG_KEY_PASTE_CONTAINERS = LANG_KEY_ROOT + ".subCategoryPasteContainers";
+
     private static final String LANG_KEY_GADGET_BUILDING = LANG_KEY_GADGETS + ".gadgetBuilding";
 
     private static final String LANG_KEY_GADGET_EXCHANGER = LANG_KEY_GADGETS + ".gadgetExchanger";
@@ -24,11 +26,17 @@ public class Config {
 
     private static final String LANG_KEY_GADGET_COPY_PASTE = LANG_KEY_GADGETS + ".gadgetCopyPaste";
 
+    private static final String LANG_KEY_PASTE_CONTAINERS_CAPACITY = LANG_KEY_PASTE_CONTAINERS + ".capacity";
+
     private static final String LANG_KEY_GADGETS_ENERGY = LANG_KEY_GADGETS + ".energyCost";
+
+    private static final String LANG_KEY_GADGETS_DAMAGE = LANG_KEY_GADGETS + ".damageCost";
 
     private static final String LANG_KEY_GADGETS_DURABILITY = LANG_KEY_GADGETS + ".durability";
 
     private static final String LANG_KEY_GADGETS_ENERGY_COMMENT = "The Gadget's Energy cost per Operation";
+
+    private static final String LANG_KEY_GADGETS_DAMAGE_COMMENT = "The Gadget's Damage cost per Operation";
 
     private static final String LANG_KEY_GADGETS_DURABILITY_COMMENT = "The Gadget's Durability (0 means no durability is used) (Ignored if powered by FE)";
 
@@ -90,10 +98,16 @@ public class Config {
     @LangKey(LANG_KEY_GADGETS)
     public static CategoryGadgets subCategoryGadgets = new CategoryGadgets();
 
+    @Name("Paste Containers")
+    @Comment("Configure the Paste Containers here")
+    @LangKey(LANG_KEY_PASTE_CONTAINERS)
+    public static CategoryPasteContainers subCategoryPasteContainers = new CategoryPasteContainers();
+
     //using unistantiable final class instead of enum, so that it doesn't cause issues with the ConfigManger trying to access the Instance field
     //No defense against reflection needed here (I think)
     public static final class CategoryGadgets {
-        private CategoryGadgets() { }
+        private CategoryGadgets() {
+        }
 
         @RangeInt(min = 1, max = 25)
         @Name("Maximum allowed Range")
@@ -135,7 +149,14 @@ public class Config {
             @Comment(LANG_KEY_GADGETS_ENERGY_COMMENT)
             @LangKey(LANG_KEY_GADGETS_ENERGY)
             public int energyCostBuilder = 50;
+ 
+            @RangeInt(min = 0, max = 2000)
+            @Name("Damage Cost")
+            @Comment(LANG_KEY_GADGETS_DAMAGE_COMMENT)
+            @LangKey(LANG_KEY_GADGETS_DAMAGE)
+            public int damageCostBuilder = 1;
 
+            @RequiresWorldRestart
             @RangeInt(min = 0, max = 100000)
             @Name("Durability")
             @Comment(LANG_KEY_GADGETS_DURABILITY_COMMENT)
@@ -152,6 +173,13 @@ public class Config {
             @LangKey(LANG_KEY_GADGETS_ENERGY)
             public int energyCostExchanger = 100;
 
+            @RangeInt(min = 0, max = 2000)
+            @Name("Damage Cost")
+            @Comment(LANG_KEY_GADGETS_DAMAGE_COMMENT)
+            @LangKey(LANG_KEY_GADGETS_DAMAGE)
+            public int damageCostExchanger = 2;
+
+            @RequiresWorldRestart
             @RangeInt(min = 0, max = 100000)
             @Name("Durability")
             @Comment(LANG_KEY_GADGETS_DURABILITY_COMMENT)
@@ -173,11 +201,30 @@ public class Config {
             @LangKey(LANG_KEY_GADGETS_ENERGY)
             public int energyCostDestruction = 200;
 
+            @RangeInt(min = 0, max = 2000)
+            @Name("Damage Cost")
+            @Comment(LANG_KEY_GADGETS_DAMAGE_COMMENT)
+            @LangKey(LANG_KEY_GADGETS_DAMAGE)
+            public int damageCostDestruction = 4;
+
+            @RequiresWorldRestart
             @RangeInt(min = 0, max = 100000)
             @Name("Durability")
             @Comment(LANG_KEY_GADGETS_DURABILITY_COMMENT)
             @LangKey(LANG_KEY_GADGETS_DURABILITY)
             public int durabilityDestruction = 500;
+
+            @RangeDouble(min = 0)
+            @Name("Non-Fuzzy Mode Multiplier")
+            @Comment("The cost in energy/durability will increase by this amount when not in fuzzy mode")
+            @LangKey(LANG_KEY_GADGET_DESTRUCTION + ".nonfuzzy.multiplier")
+            public double nonFuzzyMultiplier = 2;
+
+            @Name("Non-Fuzzy Mode Enabled")
+            @Comment("If enabled, the Destruction Gadget can be taken out of fuzzy mode, allowing only instances of the block "
+                    + "clicked to be removed (at a higher cost)")
+            @LangKey(LANG_KEY_GADGET_DESTRUCTION + ".nonfuzzy.enabled")
+            public boolean nonFuzzyEnabled = false;
         }
 
         public static final class CategoryGadgetCopyPaste {
@@ -189,12 +236,42 @@ public class Config {
             @LangKey(LANG_KEY_GADGETS_ENERGY)
             public int energyCostCopyPaste = 50;
 
+            @RangeInt(min = 0, max = 2000)
+            @Name("Damage Cost")
+            @Comment(LANG_KEY_GADGETS_DAMAGE_COMMENT)
+            @LangKey(LANG_KEY_GADGETS_DAMAGE)
+            public int damageCostCopyPaste = 1;
+
+            @RequiresWorldRestart
             @RangeInt(min = 0, max = 100000)
             @Name("Durability")
             @Comment(LANG_KEY_GADGETS_DURABILITY_COMMENT)
             @LangKey(LANG_KEY_GADGETS_DURABILITY)
             public int durabilityCopyPaste = 500;
         }
+    }
+
+    public static final class CategoryPasteContainers {
+        private CategoryPasteContainers() {
+        }
+
+        @RangeInt(min = 1)
+        @Comment("The maximum capacity of a tier 1 (iron) Construction Paste Container")
+        @Name("T1 Container Capacity")
+        @LangKey(LANG_KEY_PASTE_CONTAINERS_CAPACITY + ".t1")
+        public int t1Capacity = 512;
+
+        @RangeInt(min = 1)
+        @Comment("The maximum capacity of a tier 2 (gold) Construction Paste Container")
+        @Name("T2 Container Capacity")
+        @LangKey(LANG_KEY_PASTE_CONTAINERS_CAPACITY + ".t2")
+        public int t2Capacity = 2048;
+
+        @RangeInt(min = 1)
+        @Comment("The maximum capacity of a tier 3 (diamond) Construction Paste Container")
+        @Name("T3 Container Capacity")
+        @LangKey(LANG_KEY_PASTE_CONTAINERS_CAPACITY + ".t3")
+        public int t3Capacity = 8192;
     }
 
 }

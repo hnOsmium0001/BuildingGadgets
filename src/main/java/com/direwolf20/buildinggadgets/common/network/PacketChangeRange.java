@@ -1,7 +1,6 @@
 package com.direwolf20.buildinggadgets.common.network;
 
 import com.direwolf20.buildinggadgets.common.items.gadgets.*;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -9,18 +8,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
-public class PacketChangeRange implements IMessage {
-
-    @Override
-    public void fromBytes(ByteBuf buf) {
-    }
-
-    @Override
-    public void toBytes(ByteBuf buf) {
-    }
-
-    public PacketChangeRange() {
-    }
+public class PacketChangeRange extends PacketEmpty {
 
     public static class Handler implements IMessageHandler<PacketChangeRange, IMessage> {
         @Override
@@ -43,10 +31,10 @@ public class PacketChangeRange implements IMessage {
                 gadgetExchanger.rangeChange(playerEntity, heldItem);
             } else if (heldItem.getItem() instanceof GadgetCopyPaste) {
                 GadgetCopyPaste gadgetCopyPaste = (GadgetCopyPaste) (heldItem.getItem());
-                gadgetCopyPaste.rotateBlocks(heldItem, playerEntity);
+                gadgetCopyPaste.rotateOrMirrorBlocks(heldItem, playerEntity);
             } else if (heldItem.getItem() instanceof GadgetDestruction) {
                 GadgetDestruction gadgetDestruction = (GadgetDestruction) (heldItem.getItem());
-                gadgetDestruction.switchOverlay(heldItem);
+                gadgetDestruction.switchOverlay(playerEntity, heldItem);
             }
         }
     }

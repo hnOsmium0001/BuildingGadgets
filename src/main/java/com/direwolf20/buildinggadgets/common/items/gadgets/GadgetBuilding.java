@@ -6,11 +6,7 @@ import com.direwolf20.buildinggadgets.common.config.SyncedConfig;
 import com.direwolf20.buildinggadgets.common.entities.BlockBuildEntity;
 import com.direwolf20.buildinggadgets.common.items.FakeBuilderWorld;
 import com.direwolf20.buildinggadgets.common.items.ModItems;
-import com.direwolf20.buildinggadgets.common.tools.BuildingModes;
-import com.direwolf20.buildinggadgets.common.tools.InventoryManipulation;
-import com.direwolf20.buildinggadgets.common.tools.ToolRenders;
-import com.direwolf20.buildinggadgets.common.tools.UndoState;
-import com.direwolf20.buildinggadgets.common.tools.VectorTools;
+import com.direwolf20.buildinggadgets.common.tools.*;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
@@ -46,8 +42,13 @@ public class GadgetBuilding extends GadgetGeneric {
     private static final FakeBuilderWorld fakeWorld = new FakeBuilderWorld();
 
     public enum ToolMode {
-        BuildToMe, VerticalColumn, HorizontalColumn, VerticalWall, HorizontalWall, Stairs, Checkerboard;
+        BuildToMe, VerticalColumn, HorizontalColumn, VerticalWall, HorizontalWall, Stairs, Grid, Surface;
         private static ToolMode[] vals = values();
+
+        @Override
+        public String toString() {
+            return formatName(name());
+        }
 
         public ToolMode next() {
             return vals[(this.ordinal() + 1) % vals.length];
@@ -63,17 +64,17 @@ public class GadgetBuilding extends GadgetGeneric {
 
     @Override
     public int getMaxDamage(ItemStack stack) {
-        return SyncedConfig.poweredByFE?0:SyncedConfig.durabilityBuilder;
+        return SyncedConfig.poweredByFE ? 0 : SyncedConfig.durabilityBuilder;
     }
 
     @Override
-    public int getEnergyCost() {
+    public int getEnergyCost(ItemStack tool) {
         return SyncedConfig.energyCostBuilder;
     }
 
     @Override
-    public int getDamagePerUse() {
-        return 1;
+    public int getDamageCost(ItemStack tool) {
+        return SyncedConfig.damageCostBuilder;
     }
 
     private static void setToolMode(ItemStack stack, ToolMode mode) {
@@ -101,15 +102,31 @@ public class GadgetBuilding extends GadgetGeneric {
         return mode;
     }
 
+    public static boolean shouldPlaceAtop(ItemStack stack) {
+        return !NBTTool.getOrNewTag(stack).getBoolean("start_inside");
+    }
+
+    public static void togglePlaceAtop(EntityPlayer player, ItemStack stack) {
+        NBTTool.getOrNewTag(stack).setBoolean("start_inside", shouldPlaceAtop(stack));
+        String prefix = "message.gadget.building.placement";
+        player.sendStatusMessage(new TextComponentString(TextFormatting.AQUA + new TextComponentTranslation(prefix, new TextComponentTranslation(prefix + (shouldPlaceAtop(stack) ? ".atop" : ".inside"))).getUnformattedComponentText()), true);
+    }
+
     @Override
     public void addInformation(ItemStack stack, @Nullable World world, List<String> list, ITooltipFlag b) {
         //Add tool information to the tooltip
         super.addInformation(stack, world, list, b);
         list.add(TextFormatting.DARK_GREEN + I18n.format("tooltip.gadget.block") + ": " + getToolBlock(stack).getBlock().getLocalizedName());
-        list.add(TextFormatting.AQUA + I18n.format("tooltip.gadget.mode") + ": " + getToolMode(stack));
-        if (getToolMode(stack) != ToolMode.BuildToMe) {
-            list.add(TextFormatting.RED + I18n.format("tooltip.gadget.range") + ": " + getToolRange(stack));
-        }
+        ToolMode mode = getToolMode(stack);
+        list.add(TextFormatting.AQUA + I18n.format("tooltip.gadget.mode") + ": " + (mode == ToolMode.Surface && getConnectedArea(stack) ? I18n.format("tooltip.gadget.connected") + " " : "") + mode);
+        if (getToolMode(stack) != ToolMode.BuildToMe)
+            list.add(TextFormatting.LIGHT_PURPLE + I18n.format("tooltip.gadget.range") + ": " + getToolRange(stack));
+
+        if (getToolMode(stack) == ToolMode.Surface)
+            list.add(TextFormatting.GOLD + I18n.format("tooltip.gadget.fuzzy") + ": " + getFuzzy(stack));
+
+        addInformationRayTraceFluid(list, stack);
+        list.add(TextFormatting.YELLOW + I18n.format("tooltip.gadget.building.place_atop") + ": " + shouldPlaceAtop(stack));
         addEnergyInformation(list, stack);
     }
 
@@ -129,34 +146,31 @@ public class GadgetBuilding extends GadgetGeneric {
                 build(player, itemstack);
             }
         } else if (!player.isSneaking()) {
-            ToolRenders.updateCache();
+            ToolRenders.updateInventoryCache();
         }
         return new ActionResult<ItemStack>(EnumActionResult.SUCCESS, itemstack);
     }
 
     public void toggleMode(EntityPlayer player, ItemStack heldItem) {//TODO unused
-        //Called when the mode toggle hotkey is pressed
-        ToolMode mode = getToolMode(heldItem);
-        mode = mode.next();
-        setToolMode(heldItem, mode);
-        player.sendStatusMessage(new TextComponentString(TextFormatting.AQUA + new TextComponentTranslation("message.gadget.toolmode").getUnformattedComponentText() + ": " + mode.name()), true);
+        setMode(player, heldItem, getToolMode(heldItem).next().ordinal());
     }
 
     public void setMode(EntityPlayer player, ItemStack heldItem, int modeInt) {
         //Called when we specify a mode with the radial menu
         ToolMode mode = ToolMode.values()[modeInt];
         setToolMode(heldItem, mode);
-        player.sendStatusMessage(new TextComponentString(TextFormatting.AQUA + new TextComponentTranslation("message.gadget.toolmode").getUnformattedComponentText() + ": " + mode.name()), true);
+        player.sendStatusMessage(new TextComponentString(TextFormatting.AQUA + new TextComponentTranslation("message.gadget.toolmode").getUnformattedComponentText() + ": " + mode), true);
     }
 
     public void rangeChange(EntityPlayer player, ItemStack heldItem) {
         //Called when the range change hotkey is pressed
         int range = getToolRange(heldItem);
-        if (player.isSneaking()) {
-            range = (range == 1) ? SyncedConfig.maxRange : range - 1;
-        } else {
-            range = (range >= SyncedConfig.maxRange) ? 1 : range + 1;
-        }
+        int changeAmount = (getToolMode(heldItem) != ToolMode.Surface || (range % 2 == 0)) ? 1 : 2;
+        if (player.isSneaking())
+            range = (range == 1) ? SyncedConfig.maxRange : range - changeAmount;
+        else
+            range = (range >= SyncedConfig.maxRange) ? 1 : range + changeAmount;
+
         setToolRange(heldItem, range);
         player.sendStatusMessage(new TextComponentString(TextFormatting.DARK_AQUA + new TextComponentTranslation("message.gadget.toolrange").getUnformattedComponentText() + ": " + range), true);
     }
@@ -167,7 +181,7 @@ public class GadgetBuilding extends GadgetGeneric {
         List<BlockPos> coords = getAnchor(stack);
 
         if (coords.size() == 0) {  //If we don't have an anchor, build in the current spot
-            RayTraceResult lookingAt = VectorTools.getLookingAt(player);
+            RayTraceResult lookingAt = VectorTools.getLookingAt(player, stack);
             if (lookingAt == null) { //If we aren't looking at anything, exit
                 return false;
             }
@@ -208,7 +222,8 @@ public class GadgetBuilding extends GadgetGeneric {
                 pushUndoList(heldItem, undoState);
             }
         }
-        BuildingModes.sortByDistance(coords, player);
+
+        Sorter.Blocks.byDistance(coords, player);
         return true;
     }
 
