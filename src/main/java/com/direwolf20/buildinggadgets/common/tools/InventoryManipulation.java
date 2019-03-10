@@ -22,6 +22,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class InventoryManipulation {
@@ -357,6 +358,19 @@ public class InventoryManipulation {
         }
         return placeState;
 
+    }
+
+    @Nullable
+    public static ItemStack getStackInEitherHand(EntityPlayer player, Class<?> itemClass) {
+        ItemStack mainHand = player.getHeldItemMainhand();
+        if (itemClass.isInstance(mainHand.getItem())) {
+            return mainHand;
+        }
+        ItemStack offhand = player.getHeldItemOffhand();
+        if (itemClass.isInstance(offhand.getItem())) {
+            return offhand;
+        }
+        return null;
     }
 
     /*public static IBlockState getBaseState(IBlockState originalState, World world, EntityPlayer player, BlockPos pos) {

@@ -3,9 +3,12 @@ package com.direwolf20.buildinggadgets.client.gui;
 import com.direwolf20.buildinggadgets.common.blocks.templatemanager.TemplateManagerContainer;
 import com.direwolf20.buildinggadgets.common.blocks.templatemanager.TemplateManagerGUI;
 import com.direwolf20.buildinggadgets.common.blocks.templatemanager.TemplateManagerTileEntity;
+import com.direwolf20.buildinggadgets.common.items.Template;
 import com.direwolf20.buildinggadgets.common.items.gadgets.GadgetCopyPaste;
 import com.direwolf20.buildinggadgets.common.items.gadgets.GadgetDestruction;
+import com.direwolf20.buildinggadgets.common.tools.InventoryManipulation;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -26,7 +29,6 @@ public class GuiProxy implements IGuiHandler {
             return new TemplateManagerContainer(player.inventory, (TemplateManagerTileEntity) te);
         }
 
-
         return null;
     }
 
@@ -38,28 +40,32 @@ public class GuiProxy implements IGuiHandler {
             TemplateManagerTileEntity containerTileEntity = (TemplateManagerTileEntity) te;
             return new TemplateManagerGUI(containerTileEntity, new TemplateManagerContainer(player.inventory, containerTileEntity));
         }
-        if (ID == CopyPasteID) {
-            if (player.getHeldItemMainhand().getItem() instanceof GadgetCopyPaste)
-                return new CopyPasteGUI(player.getHeldItemMainhand());
-            else if (player.getHeldItemOffhand().getItem() instanceof GadgetCopyPaste)
-                return new CopyPasteGUI(player.getHeldItemOffhand());
-            else
+        switch (ID) {
+            case CopyPasteID:
+                if (player.getHeldItemMainhand().getItem() instanceof GadgetCopyPaste)
+                    return new CopyPasteGUI(player.getHeldItemMainhand());
+                else if (player.getHeldItemOffhand().getItem() instanceof GadgetCopyPaste)
+                    return new CopyPasteGUI(player.getHeldItemOffhand());
                 return null;
-        } else if (ID == DestructionID) {
-            if (player.getHeldItemMainhand().getItem() instanceof GadgetDestruction)
-                return new DestructionGUI(player.getHeldItemMainhand());
-            else if (player.getHeldItemOffhand().getItem() instanceof GadgetDestruction)
-                return new DestructionGUI(player.getHeldItemOffhand());
-            else
+            case DestructionID:
+                if (player.getHeldItemMainhand().getItem() instanceof GadgetDestruction)
+                    return new DestructionGUI(player.getHeldItemMainhand());
+                else if (player.getHeldItemOffhand().getItem() instanceof GadgetDestruction)
+                    return new DestructionGUI(player.getHeldItemOffhand());
                 return null;
-        } else if (ID == PasteID) {
-            if (player.getHeldItemMainhand().getItem() instanceof GadgetCopyPaste)
-                return new PasteGUI(player.getHeldItemMainhand());
-            else if (player.getHeldItemOffhand().getItem() instanceof GadgetCopyPaste)
-                return new PasteGUI(player.getHeldItemOffhand());
-            else
+            case PasteID:
+                if (player.getHeldItemMainhand().getItem() instanceof GadgetCopyPaste)
+                    return new PasteGUI(player.getHeldItemMainhand());
+                else if (player.getHeldItemOffhand().getItem() instanceof GadgetCopyPaste)
+                    return new PasteGUI(player.getHeldItemOffhand());
+                return null;
+            case MaterialListID:
+                ItemStack template = InventoryManipulation.getStackInEitherHand(player, Template.class);
+                if (template != null)
+                    return new TemplateMaterialListGui(template);
                 return null;
         }
         return null;
     }
+
 }

@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class Template extends Item implements ITemplate {
+
     public Template() {
         setRegistryName("template");        // The unique name (within your mod) that identifies this item
         setUnlocalizedName(BuildingGadgets.MODID + ".template");     // Used for localization (en_US.lang)
@@ -70,9 +71,6 @@ public class Template extends Item implements ITemplate {
             return EnumActionResult.PASS;
         }
 
-        if (!world.isRemote) {
-            player.openGui(BuildingGadgets.instance, GuiProxy.MaterialListID, world, pos.getX(), pos.getY(), pos.getZ());
-        }
         return EnumActionResult.SUCCESS;
     }
 
@@ -91,8 +89,10 @@ public class Template extends Item implements ITemplate {
 
     @Override
     public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand hand) {
-        ItemStack itemstack = player.getHeldItem(hand);
-        return new ActionResult<ItemStack>(EnumActionResult.SUCCESS, itemstack);
+        if (world.isRemote) {
+            player.openGui(BuildingGadgets.instance, GuiProxy.MaterialListID, world, (int) player.posX, (int) player.posY, (int) player.posZ);
+        }
+        return new ActionResult<>(EnumActionResult.SUCCESS, player.getHeldItem(hand));
     }
 
 }
