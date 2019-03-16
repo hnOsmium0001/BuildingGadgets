@@ -1,6 +1,5 @@
 package com.direwolf20.buildinggadgets.common.items.gadgets;
 
-import com.direwolf20.buildinggadgets.common.BuildingGadgets;
 import com.direwolf20.buildinggadgets.common.blocks.ModBlocks;
 import com.direwolf20.buildinggadgets.common.config.SyncedConfig;
 import com.direwolf20.buildinggadgets.common.entities.BlockBuildEntity;
@@ -56,9 +55,7 @@ public class GadgetBuilding extends GadgetGeneric {
     }
 
     public GadgetBuilding() {
-        setRegistryName("buildingtool");        // The unique name (within your mod) that identifies this item
-        setUnlocalizedName(BuildingGadgets.MODID + ".buildingtool");     // Used for localization (en_US.lang)
-        setMaxStackSize(1);
+        super("buildingtool");
         setMaxDamage(SyncedConfig.durabilityBuilder);
     }
 
@@ -217,6 +214,7 @@ public class GadgetBuilding extends GadgetGeneric {
                     undoCoords.add(coordinate);//If we successfully place the block, add the location to the undo list.
                 }
             }
+            GadgetUtils.clearCachedRemoteInventory();
             if (undoCoords.size() > 0) { //If the undo list has any data in it, add it to NBT on the tool.
                 UndoState undoState = new UndoState(player.dimension, undoCoords);
                 pushUndoList(heldItem, undoState);
@@ -262,6 +260,7 @@ public class GadgetBuilding extends GadgetGeneric {
                     failedRemovals.add(coord);
                 }
             }
+            GadgetUtils.clearCachedRemoteInventory();
             if (failedRemovals.size() != 0) { //Add any failed undo blocks to the undo stack.
                 UndoState failedState = new UndoState(player.dimension, failedRemovals);
                 pushUndoList(heldItem, failedState);

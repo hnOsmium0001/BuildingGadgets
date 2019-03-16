@@ -99,6 +99,12 @@ public class SyncedConfig {
     public static boolean enablePaste;
 
     @AutoSync
+    public static int pasteDroppedMin;
+
+    @AutoSync
+    public static int pasteDroppedMax;
+
+    @AutoSync
     public static int t1ContainerCapacity;
 
     @AutoSync
@@ -121,6 +127,8 @@ public class SyncedConfig {
         absoluteCoordDefault = Config.absoluteCoordDefault;
         canOverwriteBlocks = Config.canOverwriteBlocks;
         enablePaste = Config.enablePaste;
+        pasteDroppedMin = Config.pasteDroppedMin;
+        pasteDroppedMax = Config.pasteDroppedMax;
 
         blockBlacklist = FieldMapper.PATTERN_LIST_MAPPER.mapToField(Config.subCategoryBlacklist.blockBlacklist);
 

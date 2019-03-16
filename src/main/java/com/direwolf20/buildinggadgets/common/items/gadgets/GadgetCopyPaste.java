@@ -30,7 +30,6 @@ import net.minecraft.nbt.NBTUtil;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.*;
 import net.minecraft.util.EnumFacing.Axis;
-import net.minecraft.util.EnumFacing.AxisDirection;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.text.TextComponentString;
@@ -57,9 +56,7 @@ public class GadgetCopyPaste extends GadgetGeneric implements ITemplate {
     }
 
     public GadgetCopyPaste() {
-        setRegistryName("copypastetool");        // The unique name (within your mod) that identifies this item
-        setUnlocalizedName(BuildingGadgets.MODID + ".copypastetool");     // Used for localization (en_US.lang)
-        setMaxStackSize(1);
+        super("copypastetool");
         setMaxDamage(SyncedConfig.durabilityCopyPaste);
     }
 
@@ -495,6 +492,7 @@ public class GadgetCopyPaste extends GadgetGeneric implements ITemplate {
         for (BlockMap blockMap : blockMapList)
             placeBlock(world, blockMap.pos, player, blockMap.state, getBlockMapIntState(tagCompound).getIntStackMap());
 
+        GadgetUtils.clearCachedRemoteInventory();
         setAnchor(stack, null);
         //System.out.printf("Built %d Blocks in %.2f ms%n", blockMapList.size(), (System.nanoTime() - time) * 1e-6);
     }

@@ -56,8 +56,20 @@ public class Config {
     @RequiresWorldRestart
     @Name("Enable Construction Paste")
     @Comment("Set to false to disable the recipe for construction paste.")
-    @LangKey(LANG_KEY_ROOT + ".enablePaste")
+    @LangKey(LANG_KEY_ROOT + ".paste.enabled")
     public static boolean enablePaste = true;
+
+    @RangeInt(min = 0)
+    @Name("Construction Paste Drop Count - Min")
+    @Comment("The minimum number of construction paste items dropped by a dense construction block.")
+    @LangKey(LANG_KEY_ROOT + ".paste.dropped.min")
+    public static int pasteDroppedMin = 1;
+
+    @RangeInt(min = 0)
+    @Name("Construction Paste Drop Count - Max")
+    @Comment("The maximum number of construction paste items dropped by a dense construction block.")
+    @LangKey(LANG_KEY_ROOT + ".paste.dropped.max")
+    public static int pasteDroppedMax = 3;
 
     @RequiresMcRestart
     @RequiresWorldRestart
