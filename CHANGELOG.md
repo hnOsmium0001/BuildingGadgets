@@ -2,8 +2,24 @@
 The format of this document is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and should continue to adhere to the conventions outlined in the Keep a Changelog guidelines.
 
 ## [Unreleased]
+### Changed
+### Added
+- Building and Exchanging gadgets can now rotate/mirror their set blocks.
+- Added settings to the radial menu for rotation, mirroring, undoing, and anchoring. All operations that can be performed by a keybind can now be performed via the radial menu.
+
+### Changed
+- Separated rotation/mirror keybind from range.
+- Raised the energy costs in recipes to 4000/1000 from
+    - 400/100 in the pulverizer and fluid extractor *[Thermal Expansion]*
+    - 1600/400 in the crusher *[Immersive Engineering]*
+
+## [2.6.7] - 2019-03-18
 ### Added
 - The copy/paste gadget can now mirror pastes, as well as rotate them. Sneak while pressing the keybind that previously just rotated them to mirror them left-to-right instead.
+- Added/changed radial menu functionality/aesthetics:
+    - Converted text-based settings controls to icon-based ones.
+    - Prevented mode strings from rendering when the cursor is not over its corresponding slice.
+    - Added range slider.
 - Allowed gadgets to bind Simple Storage Network networks as a remote inventories (you can only bind the Storage Network Master block).
 - Dense construction blocks now drop 1-3 (configurable) construction paste items.
 - The process of generating construction paste is now as follows:
