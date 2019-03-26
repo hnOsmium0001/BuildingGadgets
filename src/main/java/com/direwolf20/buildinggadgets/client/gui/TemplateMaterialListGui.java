@@ -1,12 +1,20 @@
 package com.direwolf20.buildinggadgets.client.gui;
 
+import com.direwolf20.buildinggadgets.client.gui.box.FlexBox;
+import com.direwolf20.buildinggadgets.client.util.RenderUtil;
 import com.direwolf20.buildinggadgets.common.items.Template;
+import com.direwolf20.buildinggadgets.common.tools.InventoryManipulation;
 import com.direwolf20.buildinggadgets.common.tools.UniqueItem;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
+import it.unimi.dsi.fastutil.ints.IntList;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.MathHelper;
 
+import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +24,11 @@ import java.util.List;
  * <a href="github.com/Lunatrius/Schematica/blob/master/src/main/java/com/github/lunatrius/schematica/client/gui/control/GuiSchematicMaterials.java">Github</a>
  */
 public class TemplateMaterialListGui extends GuiScreen {
+
+    public static final int BUTTON_HEIGHT = 20;
+    public static final int BUTTON_WIDTH_MAX = 128;
+    public static final int BUTTONS_PADDING = 4;
+    public static final int BUTTONS_SIDE_MARGIN_MIN = 32;
 
     // TODO use a united way to store materials
     private static List<ItemStack> toInternalMaterialList(Multiset<UniqueItem> templateList) {
@@ -30,8 +43,9 @@ public class TemplateMaterialListGui extends GuiScreen {
 
     private ItemStack template;
     private List<ItemStack> materials;
-    private List<ItemStack> available;
+    private IntList available;
     private MaterialList scrollingList;
+    // private FlexBox buttons;
 
     private String title;
     private int titleLeft;
@@ -46,15 +60,21 @@ public class TemplateMaterialListGui extends GuiScreen {
         Template item = (Template) template.getItem();
 
         this.materials = toInternalMaterialList(item.getItemCountMap(template));
-//        this.available = toInternalMaterialList();
-        this.scrollingList = new MaterialList(this, materials, this.width, this.height);
+        this.updateAvailableMaterials();
+        this.scrollingList = new MaterialList(this, this.materials, this.available, this.width, this.height);
+
+        // int unit = width / 8;
+        // this.buttons = FlexBox.horiztonal(unit, MaterialList.BOTTOM / 2 - BUTTON_HEIGHT / 2, unit * 6, 20, ImmutableList.of());
 
         this.title = "Material List";
         this.titleTop = MaterialList.TOP / 2 - fontRenderer.FONT_HEIGHT / 2;
         this.titleLeft = (width / 2) - (fontRenderer.getStringWidth(title) / 2);
 
         int buttonID = -1;
-        this.addButton(new DireButton(++buttonID, 0, 0, 50, 10, "Close"));
+        int buttonY = height - (MaterialList.BOTTOM / 2 + BUTTON_HEIGHT / 2);
+        this.addButton(new DireButton(++buttonID, 0, buttonY, 50, BUTTON_HEIGHT, "Refresh Count"));
+        this.addButton(new DireButton(++buttonID, 0, buttonY, 50, BUTTON_HEIGHT, "Close"));
+        this.calculateWidthAndX();
     }
 
     @Override
@@ -62,7 +82,8 @@ public class TemplateMaterialListGui extends GuiScreen {
         drawDefaultBackground();
 
         this.scrollingList.drawScreen(mouseX, mouseY, particleTicks);
-        this.drawString(fontRenderer, title, titleLeft, titleTop, 0xFFFFFF);
+        // this.buttons.draw();
+        this.drawString(fontRenderer, title, titleLeft, titleTop, Color.WHITE.getRGB());
         super.drawScreen(mouseX, mouseY, particleTicks);
     }
 
@@ -74,20 +95,50 @@ public class TemplateMaterialListGui extends GuiScreen {
 
     @Override
     protected void actionPerformed(GuiButton button) throws IOException {
+        switch (button.id) {
+            case 0:
+                updateAvailableMaterials();
+                return;
+            case 1:
+                Minecraft.getMinecraft().player.closeScreen();
+                return;
+        }
         this.scrollingList.actionPerformed(button);
-//        switch (button.id) {
-//            case 0:
-//                Minecraft.getMinecraft().player.closeScreen();
-//                return;
-//            //TODO refresh item count
-//            case 1:
-//        }
-
     }
 
+    /**
+     * {@inheritDoc}
+     * Override to make it visible to outside.
+     */
     @Override
     public void renderToolTip(ItemStack stack, int x, int y) {
         super.renderToolTip(stack, x, y);
+    }
+
+    private void updateAvailableMaterials() {
+        this.available = InventoryManipulation.countItems(materials, Minecraft.getMinecraft().player);
+    }
+
+    private void calculateWidthAndX() {
+        int availableWidth = width - BUTTONS_SIDE_MARGIN_MIN * 2;
+
+        int amountButtons = buttonList.size();
+        int amountPadding = amountButtons - 1;
+        int paddingWidth = amountPadding * BUTTONS_PADDING;
+        int buttonWidth = MathHelper.clamp((availableWidth - paddingWidth) / amountButtons, 1, BUTTON_WIDTH_MAX);
+
+        int boxWidth = buttonWidth * amountButtons + paddingWidth * amountPadding;
+        int nextX = RenderUtil.getXForAlignedCenter(boxWidth, 0, width);
+        for (GuiButton button : buttonList) {
+            button.width = buttonWidth;
+            button.x = nextX;
+            nextX += buttonWidth + paddingWidth;
+        }
+    }
+
+    @Override
+    public boolean doesGuiPauseGame() {
+        return false;
     }
 
 }
