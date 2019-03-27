@@ -9,6 +9,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.MathHelper;
 
@@ -66,14 +67,14 @@ public class TemplateMaterialListGui extends GuiScreen {
         this.updateAvailableMaterials();
         this.scrollingList = new MaterialList(this, width, height);
 
-        this.title = "Material List";
+        this.title = I18n.format("gui.buildinggadgets.materialList.title");
         this.titleTop = RenderUtil.getYForAlignedCenter(fontRenderer.FONT_HEIGHT, 0, MaterialList.TOP);
         this.titleLeft = RenderUtil.getXForAlignedCenter(fontRenderer.getStringWidth(title), 0, width);
 
         int buttonID = -1;
         int buttonY = height - (MaterialList.BOTTOM / 2 + BUTTON_HEIGHT / 2);
-        this.buttonClose = new DireButton(++buttonID, 0, buttonY, 50, BUTTON_HEIGHT, "Close");
-        this.buttonRefreshCount = new DireButton(++buttonID, 0, buttonY, 50, BUTTON_HEIGHT, "Refresh Count");
+        this.buttonClose = new DireButton(++buttonID, 0, buttonY, 50, BUTTON_HEIGHT, I18n.format("gui.buildinggadgets.materialList.button.close"));
+        this.buttonRefreshCount = new DireButton(++buttonID, 0, buttonY, 50, BUTTON_HEIGHT, I18n.format("gui.buildinggadgets.materialList.button.refreshCount"));
         this.buttonSortingModes = new DireButton(++buttonID, 0, buttonY, 50, BUTTON_HEIGHT, sortingMode.getLocalizedName());
 
         this.addButton(buttonSortingModes);

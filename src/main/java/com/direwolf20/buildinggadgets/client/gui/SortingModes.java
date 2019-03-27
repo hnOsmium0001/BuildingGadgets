@@ -23,7 +23,7 @@ public enum SortingModes {
     SortingModes(BiFunction<List<ItemStack>, Boolean, List<ItemStack>> sorter, BiFunction<List<ItemStack>, Boolean, List<ItemStack>> inplaceSorter, String translationKey, boolean reverse) {
         this.sorter = sorter;
         this.inplaceSorter = inplaceSorter;
-        this.translationKey = "help.gui.button.sortingMode." + translationKey;
+        this.translationKey = "gui.buildinggadgets.materialList.button.sortingMode." + translationKey;
         this.reverse = reverse;
     }
 
