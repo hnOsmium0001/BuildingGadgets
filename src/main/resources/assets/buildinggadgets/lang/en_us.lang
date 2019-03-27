@@ -109,6 +109,10 @@ help.gui.buildinggadgets.button.help.exit=Exit help mode
 help.gui.buildinggadgets.button.load=Loads data onto a gadget/template from a template
 help.gui.buildinggadgets.button.paste=Pastes data on your computer's clipboard to a pre-existing template, or to a piece of paper, creating a template
 help.gui.buildinggadgets.button.save=Saves the data in the gadget/template to a pre-existing template, or to a piece of paper, creating a template
+help.gui.button.sortingMode.name=Name ↓
+help.gui.button.sortingMode.nameReversed=Name ↑
+help.gui.button.sortingMode.count=Count ↓
+help.gui.button.sortingMode.countReversed=Count ↑
 
 #config:
 config.buildinggadgets.general.rayTraceRange=Max Build Distance
