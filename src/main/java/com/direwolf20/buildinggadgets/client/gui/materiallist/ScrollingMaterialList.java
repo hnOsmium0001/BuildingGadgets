@@ -3,18 +3,30 @@ package com.direwolf20.buildinggadgets.client.gui.materiallist;
 import com.direwolf20.buildinggadgets.client.gui.base.GuiEntryList;
 import com.direwolf20.buildinggadgets.client.utils.AlignmentUtil;
 import com.direwolf20.buildinggadgets.client.utils.RenderUtil;
+import com.direwolf20.buildinggadgets.common.items.ITemplate;
+import com.direwolf20.buildinggadgets.common.items.Template;
+import com.direwolf20.buildinggadgets.common.items.gadgets.GadgetCopyPaste;
 import com.direwolf20.buildinggadgets.common.tools.UniqueItem;
+import com.direwolf20.buildinggadgets.common.utils.blocks.BlockMap;
 import com.direwolf20.buildinggadgets.common.utils.helpers.InventoryHelper;
+import com.direwolf20.buildinggadgets.common.world.WorldSave;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiListExtended;
 import net.minecraft.client.renderer.*;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 
 import java.awt.*;
+import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.direwolf20.buildinggadgets.client.gui.materiallist.ScrollingMaterialList.Entry;
 import static com.direwolf20.buildinggadgets.client.utils.RenderUtil.getFontRenderer;
@@ -22,6 +34,20 @@ import static org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA;
 import static org.lwjgl.opengl.GL11.GL_SRC_ALPHA;
 
 class ScrollingMaterialList extends GuiEntryList<Entry> {
+
+    private static Map<UniqueItem, Set<IBlockState>> getBlockStateUsages(ItemStack template, ITemplate templateItem) {
+        NBTTagCompound tag = WorldSave.getWorldSave(Minecraft.getInstance().world).getCompoundFromUUID(templateItem.getUUID(template));
+        List<BlockMap> blockMaps = GadgetCopyPaste.getBlockMapList(tag);
+
+        Map<UniqueItem, Set<IBlockState>> result = new HashMap<>();
+        for (BlockMap blockMap : blockMaps) {
+            UniqueItem material = new UniqueItem(blockMap.state.getBlock().asItem());
+            if (!result.containsKey(material))
+                result.put(material, new HashSet<>());
+            result.get(material).add(blockMap.state);
+        }
+        return result;
+    }
 
     static final int TOP = 16;
     static final int BOTTOM = 32;
@@ -32,6 +58,7 @@ class ScrollingMaterialList extends GuiEntryList<Entry> {
     private static final int LINE_SIDE_MARGIN = 8;
 
     private static final int SCROLL_BAR_WIDTH = 6;
+    private static final int MAX_BLOCK_STATE_LENGTH = 64;
 
     private MaterialListGUI gui;
 
@@ -46,11 +73,12 @@ class ScrollingMaterialList extends GuiEntryList<Entry> {
         this.gui = gui;
 
         Multiset<UniqueItem> materials = gui.getTemplateItem().getItemCountMap(gui.getTemplate());
+        Map<UniqueItem, Set<IBlockState>> blockStateUsages = getBlockStateUsages(gui.getTemplate(), gui.getTemplateItem());
         EntityPlayer player = Minecraft.getInstance().player;
         World world = Minecraft.getInstance().world;
         for (Multiset.Entry<UniqueItem> entry : materials.entrySet()) {
             UniqueItem item = entry.getElement();
-            addEntry(new Entry(this, item, entry.getCount(), InventoryHelper.countItem(item.toItemStack(), player, world)));
+            addEntry(new Entry(this, item, entry.getCount(), InventoryHelper.countItem(item.toItemStack(), player, world), blockStateUsages.get(item)));
         }
         this.setSortingMode(SortingModes.NAME);
 
@@ -64,6 +92,15 @@ class ScrollingMaterialList extends GuiEntryList<Entry> {
 
     static class Entry extends GuiListExtended.IGuiListEntry<Entry> {
 
+        private static String cutBlockState(IBlockState state) {
+            String original = state.toString();
+            if (original.length() > MAX_BLOCK_STATE_LENGTH) {
+                // Note that substring is inclusive-exclusive
+                return original.substring(0, MAX_BLOCK_STATE_LENGTH + 1) + "...";
+            }
+            return original;
+        }
+
         private ScrollingMaterialList parent;
         private int required;
         private int available;
@@ -72,11 +109,12 @@ class ScrollingMaterialList extends GuiEntryList<Entry> {
 
         private String itemName;
         private String amount;
+        private List<String> tooltip;
 
         private int widthItemName;
         private int widthAmount;
 
-        public Entry(ScrollingMaterialList parent, UniqueItem item, int required, int available) {
+        public Entry(ScrollingMaterialList parent, UniqueItem item, int required, int available, Set<IBlockState> blockStateUsage) {
             this.parent = parent;
             this.required = required;
             this.available = MathHelper.clamp(available, 0, required);
@@ -87,6 +125,14 @@ class ScrollingMaterialList extends GuiEntryList<Entry> {
             this.amount = this.available + "/" + required;
             this.widthItemName = Minecraft.getInstance().fontRenderer.getStringWidth(itemName);
             this.widthAmount = Minecraft.getInstance().fontRenderer.getStringWidth(amount);
+
+            List<String> itemTooltip = parent.gui.getItemToolTip(stack);
+            List<String> blockStateTooltip = blockStateUsage.stream().map(state -> TextFormatting.GRAY + cutBlockState(state)).collect(Collectors.toList());
+            this.tooltip = ImmutableList.<String>builder()
+                    .addAll(itemTooltip)
+                    .add("")
+                    .addAll(blockStateTooltip)
+                    .build();
         }
 
         @Override
@@ -169,6 +215,13 @@ class ScrollingMaterialList extends GuiEntryList<Entry> {
 
         public String getItemName() {
             return itemName;
+        }
+
+        /**
+         * Regular item tooltip with block state usage status appended.
+         */
+        public List<String> getModifiedTooltip() {
+            return tooltip;
         }
 
         @Override
