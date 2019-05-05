@@ -44,8 +44,8 @@ public final class NBTKeys {
     public static final String MAP_STATE_INT = "state_int_array";
     public static final String MAP_POS_PASTE = "pos_paste_array";
     public static final String MAP_STATE_PASTE = "state_paste_array";
-    public static final String MAP_SERIALIZE_KEY = "key";
-    public static final String MAP_SERIALIZE_VALUE = "val";
+    public static final String MAP_SERIALIZE_KEYS = "key";
+    public static final String MAP_SERIALIZE_VALUES = "val";
 
     public static final String TEMPLATE_COPY_COUNT = "copy_count";
     public static final String TEMPLATE_UUID = GADGET_UUID;

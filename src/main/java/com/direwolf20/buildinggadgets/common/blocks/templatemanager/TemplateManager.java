@@ -24,6 +24,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.items.CapabilityItemHandler;
 
 import javax.annotation.Nullable;
+import java.util.UUID;
 
 public class TemplateManager extends Block {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
@@ -72,10 +73,10 @@ public class TemplateManager extends Block {
             if (!(itemStack.getItem() instanceof ITemplate)) continue;
 
             ITemplate template = (ITemplate) itemStack.getItem();
-            String UUID = template.getUUID(itemStack);
-            if (UUID == null) continue;
+            UUID uuid = template.getUUID(itemStack);
+            if (uuid == null) continue;
 
-            NBTTagCompound tagCompound = template.getWorldSave(worldIn).getCompoundFromUUID(UUID);
+            NBTTagCompound tagCompound = template.getWorldSave(worldIn).getCompoundFromUUID(uuid);
             if (tagCompound != null) {
                 PacketHandler.sendTo(new PacketBlockMap(tagCompound), (EntityPlayerMP) player);
             }

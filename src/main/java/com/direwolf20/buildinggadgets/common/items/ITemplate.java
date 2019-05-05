@@ -3,7 +3,7 @@ package com.direwolf20.buildinggadgets.common.items;
 import com.direwolf20.buildinggadgets.common.util.tools.UniqueItem;
 import com.direwolf20.buildinggadgets.common.util.GadgetUtils;
 import com.direwolf20.buildinggadgets.common.util.ref.NBTKeys;
-import com.direwolf20.buildinggadgets.common.world.WorldSave;
+import com.direwolf20.buildinggadgets.common.world.data.IHasBlockMaps;
 import com.google.common.collect.Multiset;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -14,6 +14,7 @@ import net.minecraft.world.World;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.UUID;
 
 public interface ITemplate {
 
@@ -30,9 +31,9 @@ public interface ITemplate {
     }
 
     @Nullable
-    String getUUID(ItemStack stack);
+    UUID getUUID(ItemStack stack);
 
-    WorldSave getWorldSave(World world);
+    IHasBlockMaps getWorldSave(World world);
 
     default void setItemCountMap(ItemStack stack, Multiset<UniqueItem> tagMap) {
         NBTTagCompound tagCompound = stack.getTag();

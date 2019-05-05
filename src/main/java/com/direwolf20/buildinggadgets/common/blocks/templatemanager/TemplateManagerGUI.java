@@ -43,6 +43,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class TemplateManagerGUI extends GuiContainer {
     public static final int HELP_TEXT_BACKGROUNG_COLOR = 1694460416;
@@ -186,8 +187,8 @@ public class TemplateManagerGUI extends GuiContainer {
 
         //float rotX = 165, rotY = 0, zoom = 1;
         if (!itemstack.isEmpty()) {
-            String UUID = BGItems.gadgetCopyPaste.getUUID(itemstack);
-            ToolBufferBuilder bufferBuilder = PasteToolBufferBuilder.getBufferFromMap(UUID);
+            UUID uuid = BGItems.gadgetCopyPaste.getUUID(itemstack);
+            ToolBufferBuilder bufferBuilder = PasteToolBufferBuilder.getBufferFromMap(uuid);
             if (bufferBuilder != null) {
                 BlockPos startPos = BGItems.gadgetCopyPaste.getStartPos(itemstack);
                 BlockPos endPos = BGItems.gadgetCopyPaste.getEndPos(itemstack);

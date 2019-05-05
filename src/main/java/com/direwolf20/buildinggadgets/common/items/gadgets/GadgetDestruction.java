@@ -8,11 +8,14 @@ import com.direwolf20.buildinggadgets.common.registry.objects.BGBlocks;
 import com.direwolf20.buildinggadgets.common.util.CapabilityUtil.EnergyUtil;
 import com.direwolf20.buildinggadgets.common.util.GadgetUtils;
 import com.direwolf20.buildinggadgets.common.util.blocks.BlockMapIntState;
+import com.direwolf20.buildinggadgets.common.util.helpers.NBTHelper;
 import com.direwolf20.buildinggadgets.common.util.helpers.VectorHelper;
 import com.direwolf20.buildinggadgets.common.util.lang.Styles;
 import com.direwolf20.buildinggadgets.common.util.lang.TooltipTranslation;
 import com.direwolf20.buildinggadgets.common.util.ref.NBTKeys;
-import com.direwolf20.buildinggadgets.common.world.WorldSave;
+import com.direwolf20.buildinggadgets.common.world.data.DestructionStorage;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.player.EntityPlayer;
@@ -93,22 +96,6 @@ public class GadgetDestruction extends GadgetSwapping {
 
         addInformationRayTraceFluid(tooltip, stack);
         addEnergyInformation(tooltip, stack);
-    }
-
-    @Nullable
-    public static String getUUID(ItemStack stack) {
-        NBTTagCompound tagCompound = stack.getTag();
-        if (tagCompound == null) {
-            tagCompound = new NBTTagCompound();
-        }
-        String uuid = tagCompound.getString(NBTKeys.GADGET_UUID);
-        if (uuid.isEmpty()) {
-            UUID uid = UUID.randomUUID();
-            tagCompound.setString(NBTKeys.GADGET_UUID, uid.toString());
-            stack.setTag(tagCompound);
-            uuid = uid.toString();
-        }
-        return uuid;
     }
 
     public static void setAnchor(ItemStack stack, BlockPos pos) {
@@ -381,14 +368,14 @@ public class GadgetDestruction extends GadgetSwapping {
     }
 
     public static void storeUndo(World world, Map<BlockPos, IBlockState> posStateMap, Map<BlockPos, IBlockState> pasteStateMap, BlockPos startBlock, ItemStack stack, EntityPlayer player) {
-        WorldSave worldSave = WorldSave.getWorldSaveDestruction(world);
+        DestructionStorage destructionStorage = DestructionStorage.fromWorld(world);
         NBTTagCompound tagCompound = new NBTTagCompound();
-        List<Integer> posIntArrayList = new ArrayList<Integer>();
-        List<Integer> stateIntArrayList = new ArrayList<Integer>();
-        List<Integer> pastePosArrayList = new ArrayList<Integer>();
-        List<Integer> pasteStateArrayList = new ArrayList<Integer>();
+        IntList posIntArrayList = new IntArrayList();
+        IntList stateIntArrayList = new IntArrayList();
+        IntList pastePosArrayList = new IntArrayList();
+        IntList pasteStateArrayList = new IntArrayList();
         BlockMapIntState blockMapIntState = new BlockMapIntState();
-        String UUID = getUUID(stack);
+        UUID uuid = NBTHelper.readItemUUID(stack);
 
         for (Map.Entry<BlockPos, IBlockState> entry : posStateMap.entrySet()) {
             posIntArrayList.add(GadgetUtils.relPosToInt(startBlock, entry.getKey()));
@@ -402,25 +389,21 @@ public class GadgetDestruction extends GadgetSwapping {
             }
         }
         tagCompound.setTag(NBTKeys.MAP_STATE_INT, blockMapIntState.putIntStateMapIntoNBT());
-        int[] posIntArray = posIntArrayList.stream().mapToInt(i -> i).toArray();
-        int[] stateIntArray = stateIntArrayList.stream().mapToInt(i -> i).toArray();
-        int[] posPasteArray = pastePosArrayList.stream().mapToInt(i -> i).toArray();
-        int[] statePasteArray = pasteStateArrayList.stream().mapToInt(i -> i).toArray();
-        tagCompound.setIntArray(NBTKeys.MAP_POS_INT, posIntArray);
-        tagCompound.setIntArray(NBTKeys.MAP_STATE_INT, stateIntArray);
-        tagCompound.setIntArray(NBTKeys.MAP_POS_PASTE, posPasteArray);
-        tagCompound.setIntArray(NBTKeys.MAP_STATE_PASTE, statePasteArray);
+        tagCompound.setIntArray(NBTKeys.MAP_POS_INT, posIntArrayList.toIntArray());
+        tagCompound.setIntArray(NBTKeys.MAP_STATE_INT, stateIntArrayList.toIntArray());
+        tagCompound.setIntArray(NBTKeys.MAP_POS_PASTE, pastePosArrayList.toIntArray());
+        tagCompound.setIntArray(NBTKeys.MAP_STATE_PASTE, pasteStateArrayList.toIntArray());
         tagCompound.setTag(NBTKeys.GADGET_START_POS, NBTUtil.writeBlockPos(startBlock));
         tagCompound.setString(NBTKeys.GADGET_DIM, DimensionType.func_212678_a(player.dimension).toString());
-        tagCompound.setString(NBTKeys.GADGET_UUID, UUID);
-        worldSave.addToMap(UUID, tagCompound);
-        worldSave.markForSaving();
+        NBTHelper.writeUUID(tagCompound, uuid);
+        destructionStorage.addToMap(uuid, tagCompound);
+        destructionStorage.markDirty();
     }
 
     public static void undo(EntityPlayer player, ItemStack stack) {
         World world = player.world;
-        WorldSave worldSave = WorldSave.getWorldSaveDestruction(world);
-        NBTTagCompound tagCompound = worldSave.getCompoundFromUUID(getUUID(stack));
+        DestructionStorage worldSave = DestructionStorage.fromWorld(world);
+        NBTTagCompound tagCompound = worldSave.getCompoundFromUUID(NBTHelper.readItemUUID(stack));
         if (tagCompound == null) return;
         BlockPos startPos = NBTUtil.readBlockPos(tagCompound.getCompound(NBTKeys.GADGET_START_POS));
         if (startPos == null) return;
@@ -461,8 +444,8 @@ public class GadgetDestruction extends GadgetSwapping {
         }
         if (success) {
             NBTTagCompound newTag = new NBTTagCompound();
-            worldSave.addToMap(getUUID(stack), newTag);
-            worldSave.markForSaving();
+            worldSave.addToMap(NBTHelper.readItemUUID(stack), newTag);
+            worldSave.markDirty();
         }
     }
 

@@ -3,15 +3,16 @@ package com.direwolf20.buildinggadgets.common.items;
 import com.direwolf20.buildinggadgets.client.events.EventTooltip;
 import com.direwolf20.buildinggadgets.client.gui.GuiMod;
 import com.direwolf20.buildinggadgets.common.util.GadgetUtils;
+import com.direwolf20.buildinggadgets.common.util.helpers.NBTHelper;
 import com.direwolf20.buildinggadgets.common.util.lang.Styles;
 import com.direwolf20.buildinggadgets.common.util.lang.TooltipTranslation;
 import com.direwolf20.buildinggadgets.common.util.ref.NBTKeys;
-import com.direwolf20.buildinggadgets.common.world.WorldSave;
+import com.direwolf20.buildinggadgets.common.world.data.IHasBlockMaps;
+import com.direwolf20.buildinggadgets.common.world.data.TemplateStorage;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
@@ -29,25 +30,14 @@ public class Template extends Item implements ITemplate {
     }
 
     @Override
-    public WorldSave getWorldSave(World world) {
-        return WorldSave.getTemplateWorldSave(world);
+    public IHasBlockMaps getWorldSave(World world) {
+        return TemplateStorage.fromWorld(world);
     }
 
     @Override
     @Nullable
-    public String getUUID(ItemStack stack) {
-        NBTTagCompound tagCompound = stack.getTag();
-        if (tagCompound == null) {
-            tagCompound = new NBTTagCompound();
-        }
-        String uuid = tagCompound.getString(NBTKeys.TEMPLATE_UUID);
-        if (uuid.isEmpty()) {
-            UUID uid = UUID.randomUUID();
-            tagCompound.setString(NBTKeys.TEMPLATE_UUID, uid.toString());
-            stack.setTag(tagCompound);
-            uuid = uid.toString();
-        }
-        return uuid;
+    public UUID getUUID(ItemStack stack) {
+        return NBTHelper.readItemUUID(stack);
     }
 
     public static void setName(ItemStack stack, String name) {

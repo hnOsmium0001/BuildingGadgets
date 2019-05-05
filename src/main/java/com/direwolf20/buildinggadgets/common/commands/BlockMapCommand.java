@@ -3,7 +3,8 @@ package com.direwolf20.buildinggadgets.common.commands;
 import com.direwolf20.buildinggadgets.common.network.PacketHandler;
 import com.direwolf20.buildinggadgets.common.network.packets.PacketBlockMap;
 import com.direwolf20.buildinggadgets.common.util.ref.NBTKeys;
-import com.direwolf20.buildinggadgets.common.world.WorldSave;
+import com.direwolf20.buildinggadgets.common.world.data.AbstractDataStorage;
+import com.direwolf20.buildinggadgets.common.world.data.BlockMapStorage;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -19,6 +20,7 @@ import net.minecraft.util.text.TextFormatting;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class BlockMapCommand {
 
@@ -46,12 +48,12 @@ public class BlockMapCommand {
             return 0;
         }
 
-        WorldSave worldSave = WorldSave.getWorldSave(sender.getEntityWorld());
-        Map<String, NBTTagCompound> tagMap = worldSave.getTagMap();
-        Map<String, NBTTagCompound> newMap = new HashMap<>(tagMap);
+        BlockMapStorage blockMapStorage = BlockMapStorage.fromWorld(sender.getEntityWorld());
+        Map<UUID, NBTTagCompound> tagMap = blockMapStorage.getTagMap();
+        Map<UUID, NBTTagCompound> newMap = new HashMap<>(tagMap);
 
         int counter = 0;
-        for (Map.Entry<String, NBTTagCompound> entry : tagMap.entrySet()) {
+        for (Map.Entry<UUID, NBTTagCompound> entry : tagMap.entrySet()) {
             NBTTagCompound tagCompound = entry.getValue();
             if (tagCompound.getString(NBTKeys.TEMPLATE_OWNER).equals(entity.getName().getString())) {
                 //TODO Missing localisation
@@ -62,8 +64,8 @@ public class BlockMapCommand {
         }
 
         if (removeData && counter > 0) {
-            worldSave.setTagMap(newMap);
-            worldSave.markForSaving();
+            blockMapStorage.setTagMap(newMap);
+            blockMapStorage.markDirty();
             if (entity.getName().equals(sender.getName())) {
                 PacketHandler.sendTo(new PacketBlockMap(new NBTTagCompound()), sender);
             }

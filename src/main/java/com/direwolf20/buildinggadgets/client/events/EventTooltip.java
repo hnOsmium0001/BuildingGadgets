@@ -48,8 +48,8 @@ public class EventTooltip {
         Minecraft mc = Minecraft.getInstance();
         if (stack.getItem() instanceof ITemplate) {
             ITemplate template = (ITemplate) stack.getItem();
-            String UUID = template.getUUID(stack);
-            if (UUID == null) return;
+            UUID uuid = template.getUUID(stack);
+            if (uuid == null) return;
 
             Multiset<UniqueItem> itemCountMap = template.getItemCountMap(stack);
 

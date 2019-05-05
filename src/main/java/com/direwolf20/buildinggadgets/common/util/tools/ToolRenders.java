@@ -51,10 +51,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -504,7 +501,7 @@ public class ToolRenders {
             GlStateManager.popMatrix();
         }
 
-        String UUID = BGItems.gadgetCopyPaste.getUUID(stack);
+        UUID uuid = BGItems.gadgetCopyPaste.getUUID(stack);
         World world = player.world;
         if (BGItems.gadgetCopyPaste.getStartPos(stack) == null) return;
         if (BGItems.gadgetCopyPaste.getEndPos(stack) == null) return;
@@ -524,12 +521,12 @@ public class ToolRenders {
             }
 
             //We store our buffers in PasteToolBufferBuilder (A client only class) -- retrieve the buffer from this locally cache'd map
-            ToolBufferBuilder toolBufferBuilder = PasteToolBufferBuilder.getBufferFromMap(UUID);
+            ToolBufferBuilder toolBufferBuilder = PasteToolBufferBuilder.getBufferFromMap(uuid);
             if (toolBufferBuilder == null) {
                 return;
             }
             //Also get the blockMapList from the local cache - If either the buffer or the blockmap list are empty, exit.
-            List<BlockMap> blockMapList = GadgetCopyPaste.getBlockMapList(PasteToolBufferBuilder.getTagFromUUID(UUID));
+            List<BlockMap> blockMapList = GadgetCopyPaste.getBlockMapList(PasteToolBufferBuilder.getTagFromUUID(uuid));
             if (toolBufferBuilder.getVertexCount() == 0 || blockMapList.size() == 0) {
                 return;
             }
@@ -558,7 +555,7 @@ public class ToolRenders {
             GlStateManager.translatef(0.0005f, 0.0005f, -0.0005f);
             GlStateManager.scalef(0.999f, 0.999f, 0.999f);//Slightly Larger block to avoid z-fighting.
             //GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-            PasteToolBufferBuilder.draw(player, doubleX, doubleY, doubleZ, startPos, UUID); //Draw the cached buffer in the world.
+            PasteToolBufferBuilder.draw(player, doubleX, doubleY, doubleZ, startPos, uuid); //Draw the cached buffer in the world.
 
             GlStateManager.popMatrix();
             //Set blending back to the default mode
@@ -578,7 +575,7 @@ public class ToolRenders {
             }
 
 
-            List<BlockMap> blockMapList = GadgetCopyPaste.getBlockMapList(PasteToolBufferBuilder.getTagFromUUID(UUID));
+            List<BlockMap> blockMapList = GadgetCopyPaste.getBlockMapList(PasteToolBufferBuilder.getTagFromUUID(uuid));
             if (blockMapList.size() == 0) {
                 //return;
             }

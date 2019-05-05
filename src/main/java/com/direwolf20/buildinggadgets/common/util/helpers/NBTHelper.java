@@ -1,19 +1,22 @@
 package com.direwolf20.buildinggadgets.common.util.helpers;
 
+import com.direwolf20.buildinggadgets.common.util.ref.NBTKeys;
+import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.*;
+import net.minecraftforge.common.util.Constants;
 
 import javax.annotation.Nonnull;
-
-import com.direwolf20.buildinggadgets.common.util.ref.NBTKeys;
-
+import javax.annotation.Nullable;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
- * Utility class providing additional Methods for reading and writing array's which are not normally provided as NBT-Objects by Minecraft.
+ * Utility class providing additional Methods for reading and writing array's which are not normally provided as
+ * NBT-Objects by Minecraft.
  */
 public class NBTHelper {
 
@@ -138,7 +141,6 @@ public class NBTHelper {
         }
         return res;
     }
-
 
     @Nonnull
     public static NBTTagList createStringList(String[] strings) {
@@ -302,33 +304,85 @@ public class NBTHelper {
         return res;
     }
 
-    public static <K, V> NBTTagList serializeMap(Map<K, V> map, Function<K, INBTBase> keySerializer, Function<V, INBTBase> valueSerializer) {
-        NBTTagList list = new NBTTagList();
+    public static <K, V> NBTTagCompound serializeMap(Map<K, V> map, Function<K, NBTTagCompound> keySerializer, Function<V, NBTTagCompound> valueSerializer) {
+        NBTTagCompound result = new NBTTagCompound();
+
+        NBTTagList keys = new NBTTagList();
+        NBTTagList values = new NBTTagList();
         for (Map.Entry<K, V> entry : map.entrySet()) {
-            NBTTagCompound compound = new NBTTagCompound();
-            compound.setTag(NBTKeys.MAP_SERIALIZE_KEY, keySerializer.apply(entry.getKey()));
-            compound.setTag(NBTKeys.MAP_SERIALIZE_VALUE, valueSerializer.apply(entry.getValue()));
-            list.add(compound);
+            keys.add(keySerializer.apply(entry.getKey()));
+            values.add(valueSerializer.apply(entry.getValue()));
         }
-        return list;
+        result.setTag(NBTKeys.MAP_SERIALIZE_KEYS, keys);
+        result.setTag(NBTKeys.MAP_SERIALIZE_VALUES, values);
+
+        return result;
     }
 
-    public static <K, V> Map<K, V> deserializeMap(NBTTagList list, Map<K, V> toAppendTo, Function<INBTBase, K> keyDeserializer, Function<INBTBase, V> valueDeserializer) {
-        for (INBTBase nbt : list) {
-            if (nbt instanceof NBTTagCompound) {
-                NBTTagCompound compound = (NBTTagCompound) nbt;
-                toAppendTo.put(
-                        keyDeserializer.apply(compound.getTag(NBTKeys.MAP_SERIALIZE_KEY)),
-                        valueDeserializer.apply(compound.getTag(NBTKeys.MAP_SERIALIZE_VALUE))
-                );
-            }
+    public static <K, V> Map<K, V> deserializeMap(NBTTagCompound map, Map<K, V> toAppendTo, Function<NBTTagCompound, K> keyDeserializer, Function<NBTTagCompound, V> valueDeserializer) {
+        NBTTagList keys = map.getList(NBTKeys.MAP_SERIALIZE_KEYS, Constants.NBT.TAG_COMPOUND);
+        NBTTagList values = map.getList(NBTKeys.MAP_SERIALIZE_VALUES, Constants.NBT.TAG_COMPOUND);
+        Preconditions.checkArgument(keys.size() == values.size());
+
+        for (int i = 0; i < keys.size(); i++) {
+            toAppendTo.put(
+                    keyDeserializer.apply(keys.getCompound(i)),
+                    valueDeserializer.apply(values.getCompound(i))
+            );
         }
+
         return toAppendTo;
     }
 
+    public static UUID readItemUUID(ItemStack stack) {
+        NBTTagCompound tag = NBTHelper.getOrNewTag(stack);
+        UUID uuid = NBTHelper.getUUIDNullable(tag);
+
+        if (uuid == null) {
+            uuid = UUID.randomUUID();
+            NBTHelper.writeUUID(tag, uuid);
+        }
+        return uuid;
+    }
+
     /**
-     * If the given stack has a tag, returns it. If the given stack does not have a tag, it will set a reference and return the new tag
-     * compound.
+     * Read the least significant bits ({@code "least_bits}) and the most significant bits ({@code "most_bits"}), and
+     * combine them to create an {@link UUID}. If these two values does not exist, it will return {@code null}.
+     */
+    @Nullable
+    public static UUID getUUIDNullable(NBTTagCompound tag) {
+        long leastSignificantBits = tag.getLong("least_bits");
+        long mostSignificantBits = tag.getLong("most_bits");
+        if (leastSignificantBits == 0L && mostSignificantBits == 0L)
+            return null;
+
+        return new UUID(leastSignificantBits, mostSignificantBits);
+    }
+
+    /**
+     * Read the least significant bits ({@code "least_bits}) and the most significant bits ({@code "most_bits"}), and
+     * combine them to create an {@link UUID}. If these two values does not exist, it will return {@code
+     * UUID{leastSignificantBits=0L, mostSignificantBits=0L}}.
+     */
+    public static UUID readUUID(NBTTagCompound tag) {
+        return new UUID(tag.getLong("least_bits"), tag.getLong("most_bits"));
+    }
+
+    /**
+     * Write the least and most significant bits in to the given tag as {@code "least_bits"} and {@code "most_bits"}.
+     *
+     * @return The parameter {@code tag}
+     * @see NBTUtil#writeUniqueId(UUID)
+     */
+    public static NBTTagCompound writeUUID(NBTTagCompound tag, UUID uuid) {
+        tag.setLong("least_bits", uuid.getLeastSignificantBits());
+        tag.setLong("most_bits", uuid.getMostSignificantBits());
+        return tag;
+    }
+
+    /**
+     * If the given stack has a tag, returns it. If the given stack does not have a tag, it will set a reference and
+     * return the new tag compound.
      */
     public static NBTTagCompound getOrNewTag(ItemStack stack) {
         if (stack.hasTag()) {

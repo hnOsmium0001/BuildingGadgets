@@ -24,53 +24,50 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 @OnlyIn(Dist.CLIENT)
 public class PasteToolBufferBuilder {
 
-    private static Map<String, NBTTagCompound> tagMap = new HashMap<String, NBTTagCompound>();
-    private static Map<String, ToolBufferBuilder> bufferMap = new HashMap<String, ToolBufferBuilder>();
+    private static Map<UUID, NBTTagCompound> tagMap = new HashMap<>();
+    private static Map<UUID, ToolBufferBuilder> bufferMap = new HashMap<>();
 
 
-    private static int getCopyCounter(String UUID) {
-        if (tagMap.containsKey(UUID)) {
-            return tagMap.get(UUID).getInt(NBTKeys.TEMPLATE_COPY_COUNT);
+    private static int getCopyCounter(UUID uuid) {
+        if (tagMap.containsKey(uuid)) {
+            return tagMap.get(uuid).getInt(NBTKeys.TEMPLATE_COPY_COUNT);
         }
         return -1;
     }
 
     public static void clearMaps() {
-        tagMap = new HashMap<String, NBTTagCompound>();
-        bufferMap = new HashMap<String, ToolBufferBuilder>();
+        tagMap = new HashMap<>();
+        bufferMap = new HashMap<>();
     }
 
-    public static void addToMap(String UUID, NBTTagCompound tag) {
-        tagMap.put(UUID, tag);
+    public static void addToMap(UUID uuid, NBTTagCompound tag) {
+        tagMap.put(uuid, tag);
     }
 
     @Nullable
-    public static NBTTagCompound getTagFromUUID(String UUID) {
-        if (tagMap.containsKey(UUID)) {
-            return tagMap.get(UUID);
+    public static NBTTagCompound getTagFromUUID(UUID uuid) {
+        if (tagMap.containsKey(uuid)) {
+            return tagMap.get(uuid);
         }
         return null;
     }
 
     @Nullable
-    public static ToolBufferBuilder getBufferFromMap(String UUID) {
-        if (bufferMap.containsKey(UUID)) {
-            return bufferMap.get(UUID);
+    public static ToolBufferBuilder getBufferFromMap(UUID uuid) {
+        if (bufferMap.containsKey(uuid)) {
+            return bufferMap.get(uuid);
         }
         return null;
     }
 
-    public static void addMapToBuffer(String UUID) {
+    public static void addMapToBuffer(UUID uuid) {
 //        long time = System.nanoTime();
-        List<BlockMap> blockMapList = GadgetCopyPaste.getBlockMapList(tagMap.get(UUID));
+        List<BlockMap> blockMapList = GadgetCopyPaste.getBlockMapList(tagMap.get(uuid));
         BlockRendererDispatcher dispatcher = Minecraft.getInstance().getBlockRendererDispatcher();
         ToolBufferBuilder bufferBuilder = new ToolBufferBuilder(2097152);
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
@@ -82,13 +79,13 @@ public class PasteToolBufferBuilder {
             }
         }
         bufferBuilder.finishDrawing();
-        bufferMap.put(UUID, bufferBuilder);
+        bufferMap.put(uuid, bufferBuilder);
         //System.out.printf("Created %d Vertexes for %d blocks in %.2f ms%n", bufferBuilder.getVertexCount(), blockMapList.size(), (System.nanoTime() - time) * 1e-6);
     }
 
-    public static void draw(EntityPlayer player, double x, double y, double z, BlockPos startPos, String UUID) {
+    public static void draw(EntityPlayer player, double x, double y, double z, BlockPos startPos, UUID uuid) {
 //        long time = System.nanoTime();
-        ToolBufferBuilder bufferBuilder = bufferMap.get(UUID);
+        ToolBufferBuilder bufferBuilder = bufferMap.get(uuid);
         bufferBuilder.sortVertexData((float) (x - startPos.getX()), (float) ((y + player.getEyeHeight()) - startPos.getY()), (float) (z - startPos.getZ()));
         //System.out.printf("Sorted %d Vertexes in %.2f ms%n", bufferBuilder.getVertexCount(), (System.nanoTime() - time) * 1e-6);
         if (bufferBuilder.getVertexCount() > 0) {
@@ -122,7 +119,7 @@ public class PasteToolBufferBuilder {
         }
     }
 
-    public static boolean isUpdateNeeded(String UUID, ItemStack stack) {
-        return BGItems.gadgetCopyPaste.getCopyCounter(stack) != getCopyCounter(UUID) || PasteToolBufferBuilder.getTagFromUUID(UUID) == null;
+    public static boolean isUpdateNeeded(UUID uuid, ItemStack stack) {
+        return BGItems.gadgetCopyPaste.getCopyCounter(stack) != getCopyCounter(uuid) || PasteToolBufferBuilder.getTagFromUUID(uuid) == null;
     }
 }

@@ -1,12 +1,14 @@
 package com.direwolf20.buildinggadgets.common.network.packets;
 
 import com.direwolf20.buildinggadgets.common.util.buffers.PasteToolBufferBuilder;
+import com.direwolf20.buildinggadgets.common.util.helpers.NBTHelper;
 import com.direwolf20.buildinggadgets.common.util.ref.NBTKeys;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.network.NetworkEvent;
 
+import java.util.UUID;
 import java.util.function.Supplier;
 
 public class PacketBlockMap {
@@ -32,9 +34,9 @@ public class PacketBlockMap {
                     PasteToolBufferBuilder.clearMaps();
                 }
 
-                String UUID = msg.compound.getString(NBTKeys.GADGET_UUID);
-                PasteToolBufferBuilder.addToMap(UUID, msg.compound);
-                PasteToolBufferBuilder.addMapToBuffer(UUID);
+                UUID uuid = NBTHelper.readUUID(msg.compound);
+                PasteToolBufferBuilder.addToMap(uuid, msg.compound);
+                PasteToolBufferBuilder.addMapToBuffer(uuid);
             });
 
             ctx.get().setPacketHandled(true);
