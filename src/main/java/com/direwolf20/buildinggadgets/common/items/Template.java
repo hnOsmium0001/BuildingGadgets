@@ -37,7 +37,7 @@ public class Template extends Item implements ITemplate {
     @Override
     @Nullable
     public UUID getUUID(ItemStack stack) {
-        return NBTHelper.readItemUUID(stack);
+        return NBTHelper.getItemUUID(stack);
     }
 
     public static void setName(ItemStack stack, String name) {

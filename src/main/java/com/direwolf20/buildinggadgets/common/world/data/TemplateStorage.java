@@ -43,7 +43,7 @@ public class TemplateStorage extends AbstractDataStorage implements IHasBlockMap
 
             for (int i = 0; i < tagList.size(); i++) {
                 NBTTagCompound mapTag = tagList.getCompound(i);
-                UUID uuid = NBTHelper.getUUIDNullable(mapTag);
+                UUID uuid = NBTHelper.getExistingUUID(mapTag);
                 NBTTagCompound tagCompound = mapTag.getCompound(NBTKeys.WORLD_SAVE_TAG);
                 tagMap.put(uuid, tagCompound);
             }

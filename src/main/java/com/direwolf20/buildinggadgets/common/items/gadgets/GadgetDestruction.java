@@ -375,7 +375,7 @@ public class GadgetDestruction extends GadgetSwapping {
         IntList pastePosArrayList = new IntArrayList();
         IntList pasteStateArrayList = new IntArrayList();
         BlockMapIntState blockMapIntState = new BlockMapIntState();
-        UUID uuid = NBTHelper.readItemUUID(stack);
+        UUID uuid = NBTHelper.getItemUUID(stack);
 
         for (Map.Entry<BlockPos, IBlockState> entry : posStateMap.entrySet()) {
             posIntArrayList.add(GadgetUtils.relPosToInt(startBlock, entry.getKey()));
@@ -403,7 +403,7 @@ public class GadgetDestruction extends GadgetSwapping {
     public static void undo(EntityPlayer player, ItemStack stack) {
         World world = player.world;
         DestructionStorage worldSave = DestructionStorage.fromWorld(world);
-        NBTTagCompound tagCompound = worldSave.getCompoundFromUUID(NBTHelper.readItemUUID(stack));
+        NBTTagCompound tagCompound = worldSave.getCompoundFromUUID(NBTHelper.getItemUUID(stack));
         if (tagCompound == null) return;
         BlockPos startPos = NBTUtil.readBlockPos(tagCompound.getCompound(NBTKeys.GADGET_START_POS));
         if (startPos == null) return;
@@ -444,7 +444,7 @@ public class GadgetDestruction extends GadgetSwapping {
         }
         if (success) {
             NBTTagCompound newTag = new NBTTagCompound();
-            worldSave.addToMap(NBTHelper.readItemUUID(stack), newTag);
+            worldSave.addToMap(NBTHelper.getItemUUID(stack), newTag);
             worldSave.markDirty();
         }
     }

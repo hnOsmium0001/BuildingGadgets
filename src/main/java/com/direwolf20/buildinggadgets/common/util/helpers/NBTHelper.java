@@ -334,9 +334,10 @@ public class NBTHelper {
         return toAppendTo;
     }
 
-    public static UUID readItemUUID(ItemStack stack) {
+    @Nonnull
+    public static UUID getItemUUID(ItemStack stack) {
         NBTTagCompound tag = NBTHelper.getOrNewTag(stack);
-        UUID uuid = NBTHelper.getUUIDNullable(tag);
+        UUID uuid = NBTHelper.getExistingUUID(tag);
 
         if (uuid == null) {
             uuid = UUID.randomUUID();
@@ -350,7 +351,7 @@ public class NBTHelper {
      * combine them to create an {@link UUID}. If these two values does not exist, it will return {@code null}.
      */
     @Nullable
-    public static UUID getUUIDNullable(NBTTagCompound tag) {
+    public static UUID getExistingUUID(NBTTagCompound tag) {
         long leastSignificantBits = tag.getLong("least_bits");
         long mostSignificantBits = tag.getLong("most_bits");
         if (leastSignificantBits == 0L && mostSignificantBits == 0L)

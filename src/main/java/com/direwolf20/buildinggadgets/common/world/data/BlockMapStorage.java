@@ -41,7 +41,7 @@ public class BlockMapStorage extends AbstractDataStorage implements IHasBlockMap
 
             for (int i = 0; i < tagList.size(); i++) {
                 NBTTagCompound mapTag = tagList.getCompound(i);
-                UUID uuid = NBTHelper.getUUIDNullable(mapTag);
+                UUID uuid = NBTHelper.getExistingUUID(mapTag);
                 NBTTagCompound tagCompound = mapTag.getCompound(NBTKeys.WORLD_SAVE_TAG);
                 blockMaps.put(uuid, tagCompound);
             }
