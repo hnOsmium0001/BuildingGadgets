@@ -5,7 +5,6 @@ import com.direwolf20.buildinggadgets.common.config.Config;
 import com.direwolf20.buildinggadgets.common.entities.BlockBuildEntity;
 import com.direwolf20.buildinggadgets.common.registry.objects.BGBlocks;
 import com.direwolf20.buildinggadgets.common.registry.objects.BGItems;
-import com.direwolf20.buildinggadgets.common.util.UnnamedCompat;
 import com.direwolf20.buildinggadgets.common.util.helpers.InventoryHelper;
 import com.direwolf20.buildinggadgets.common.util.helpers.NBTHelper;
 import com.direwolf20.buildinggadgets.common.util.helpers.SortingHelper;
@@ -44,9 +43,7 @@ import net.minecraftforge.event.world.BlockEvent;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static com.direwolf20.buildinggadgets.common.util.GadgetUtils.*;
 
@@ -194,7 +191,6 @@ public class GadgetBuilding extends GadgetGeneric implements IAtopPlacingGadget 
             setAnchor(stack, new ArrayList<BlockPos>());
         }
         List<BlockPos> undoCoords = new ArrayList<BlockPos>();
-        Set<BlockPos> coordinates = new HashSet<BlockPos>(coords);
 
         ItemStack heldItem = getGadget(player);
         if (heldItem.isEmpty())
@@ -204,7 +200,7 @@ public class GadgetBuilding extends GadgetGeneric implements IAtopPlacingGadget 
 
         if (blockState != Blocks.AIR.getDefaultState()) { //Don't attempt a build if a block is not chosen -- Typically only happens on a new tool.
             BlockState state = Blocks.AIR.getDefaultState(); //Initialize a new State Variable for use in the fake world
-            fakeWorld.setWorldAndState(player.world, blockState, coordinates); // Initialize the fake world's blocks
+            fakeWorld.setWorldAndState(player.world, blockState, coords); // Initialize the fake world's blocks
             for (BlockPos coordinate : coords) {
                 if (fakeWorld.getWorldType() != WorldType.DEBUG_ALL_BLOCK_STATES) {
                     try { //Get the state of the block in the fake world (This lets fences be connected, etc)
@@ -260,7 +256,7 @@ public class GadgetBuilding extends GadgetGeneric implements IAtopPlacingGadget 
                 if (distance < 64 && sameDim && currentBlock != BGBlocks.effectBlock.getDefaultState() && !cancelled) { //Don't allow us to undo a block while its still being placed or too far away
                     if (currentBlock != Blocks.AIR.getDefaultState()) {
                         currentBlock.getBlock().harvestBlock(world, player, coord, currentBlock, world.getTileEntity(coord), silkTool);
-                        UnnamedCompat.World.spawnEntity(world, new BlockBuildEntity(world, coord, player, currentBlock, BlockBuildEntity.Mode.REMOVE, false));
+                        world.addEntity(new BlockBuildEntity(world, coord, player, currentBlock, BlockBuildEntity.Mode.REMOVE, false));
                     }
                 } else { //If you're in the wrong dimension or too far away, fail the undo.
                     player.sendStatusMessage(new StringTextComponent(TextFormatting.RED + new TranslationTextComponent("message.gadget.undofailed").getUnformattedComponentText()), true);
@@ -337,7 +333,7 @@ public class GadgetBuilding extends GadgetGeneric implements IAtopPlacingGadget 
             useItemSuccess = InventoryHelper.useItem(itemStack, player, neededItems, world);
         }
         if (useItemSuccess) {
-            UnnamedCompat.World.spawnEntity(world, new BlockBuildEntity(world, pos, player, setBlock, BlockBuildEntity.Mode.PLACE, useConstructionPaste));
+            world.addEntity(new BlockBuildEntity(world, pos, player, setBlock, BlockBuildEntity.Mode.PLACE, useConstructionPaste));
             return true;
         }
         return false;

@@ -38,7 +38,8 @@ public class BuildingObjects {
         BGBlocks.init();
         BGItems.init();
         BGEntities.init();
-        BGTileEntities.init();
+        BGBlocks.BGTileEntities.init();
+        BGContainers.init();
         DistExecutor.runWhenOn(Dist.CLIENT, () -> BuildingObjects::clientInit);
     }
 
@@ -46,11 +47,12 @@ public class BuildingObjects {
         BGBlocks.cleanup();
         BGItems.cleanup();
         BGEntities.cleanup();
-        BGTileEntities.cleanup();
+        BGBlocks.BGTileEntities.cleanup();
+        BGContainers.cleanup();
     }
 
     private static void clientInit() {
         BGEntities.clientInit();
-        BGTileEntities.clientInit();
+        BGBlocks.BGTileEntities.clientInit();
     }
 }
